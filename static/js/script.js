@@ -255,7 +255,8 @@ if (mainCard) {
   };
 
   const isDesktop = window.matchMedia('(pointer: fine)').matches;
-  const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+  const hasRealTouch =
+    ("ontouchstart" in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
 
   if (isDesktop) {
     mainCard.addEventListener('mouseenter', () => {
@@ -267,7 +268,7 @@ if (mainCard) {
     mainCard.addEventListener('mouseleave', clearHole);
   }
 
-  if (isCoarsePointer) {
+  if (hasRealTouch) {
     mainCard.addEventListener(
       'touchstart',
       (evt) => {
