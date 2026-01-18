@@ -693,12 +693,12 @@ html {
     padding-left: 5%;
     padding-right: 5%;
 
-    /* 手机端直接整张卡片透出背景，不用刷出小洞 */
-    --hole-radius: 520px;
+    /* 手机端不挖洞，保持完整卡片可见 */
+    --hole-radius: 0px;
     transition: none;
   }
 
   .card.reveal-hole {
-    --hole-radius: 520px;
+    --hole-radius: 0px;
   }
 }
