@@ -1,0 +1,18 @@
+[Unit]
+Description=Rainie Station Web Service
+After=network.target
+
+[Service]
+User=charles
+# 假设你在树莓派上的目录名也改为了 rainie-station
+WorkingDirectory=/home/charles/rainie-station
+Environment="PATH=/home/charles/rainie-station/venv/bin"
+ExecStart=/home/charles/rainie-station/venv/bin/python /home/charles/rainie-station/app.py
+Restart=always
+RestartSec=2
+# 确保 logs 目录存在
+StandardOutput=append:/home/charles/rainie-station/logs/web.log
+StandardError=append:/home/charles/rainie-station/logs/web.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+
+    <title>杨丞琳『房间里的大象』</title>
+
+    <link rel="icon" type="image/png" href="/static/img/1.png" />
+    <link rel="stylesheet" href="/static/css/style.css?v=5" />
+  </head>
+
+  <body>
+    <!-- 动态背景轮播 -->
+    <div id="bg-slider">
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
+    </div>
+    <!-- 遮罩层 -->
+    <div id="bg-overlay"></div>
+
+    <div class="stage">
+      <div class="card">
+        <!-- ✅ 中央线条大象：把 1.png 放到网站目录即可 -->
+        <div class="elephant-wrap">
+          <img src="/static/img/1.png" alt="Elephant Line Art" />
+        </div>
+
+        <!-- 房间号 -->
+        <div class="roomno">房间号：<b>0604</b></div>
+
+        <!-- 内容 -->
+        <div class="content">
+          <div class="left">
+            <div class="meta">
+              <div class="station">ROOM 64 STATION</div>
+              <div class="title">房间里的大象</div>
+              <div class="sub">杨丞琳</div>
+            </div>
+
+            <div class="notes">
+              <div class="note">
+                <div class="star">★</div>
+                <div class="txt">愛不是展覽，何必給誰看。</div>
+              </div>
+              <div class="note">
+                <div class="star">★</div>
+                <div class="txt">專心被你爱是一種奢侈。</div>
+              </div>
+              <div class="note">
+                <div class="star">★</div>
+                <div class="txt">我們虧欠自己，越是痛越會免疫。</div>
+              </div>
+              <div class="note">
+                <div class="star">★</div>
+                <div class="txt">記憶里保留好的全部，流過的才不會辜負。</div>
+              </div>
+              <div class="note">
+                <div class="star">★</div>
+                <div class="txt">生活太過千頭萬緒，才想在感情里任性。</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="right">
+            <div id="date" class="date"></div>
+            <div id="clock" class="clock">00:00:00</div>
+            
+            <!-- 巡演信息滑块 -->
+            <div id="tour-info" class="tour-info" style="display: none;">
+              <div class="divider"></div>
+              <div class="next-label">UPCOMING STATIONS</div>
+              
+              <div class="slider-container">
+                <div id="prev-btn" class="nav-btn prev hidden">❮</div>
+                
+                <!-- 滑动容器 -->
+                <div id="tour-slider" class="tour-slider">
+                  <!-- 动态内容将注入这里 -->
+                </div>
+                
+                <div id="next-btn" class="nav-btn next">❯</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧竖排品牌栏 -->
+        <div class="brand-rail">
+          <div class="vtext">Tree & Skyline Premier Hotel</div>
+          <div class="tag">The Elephant We See</div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+  </body>
+</html>
