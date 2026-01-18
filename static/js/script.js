@@ -229,16 +229,4 @@ if (slider) {
   }, { passive: false });
 }
 
-const mainCard = document.querySelector('.card');
-
-if (mainCard) {
-  const DESKTOP_RADIUS = 380;
-
-  mainCard.addEventListener('mouseenter', () => {
-    mainCard.style.setProperty('--hole-radius', `${DESKTOP_RADIUS}px`);
-  });
-
-  mainCard.addEventListener('mouseleave', () => {
-    mainCard.style.setProperty('--hole-radius', '0px');
-  });
-}
+// 洞的效果现在完全由 CSS 控制，圆心和半径都固定，不再需要 JS 参与

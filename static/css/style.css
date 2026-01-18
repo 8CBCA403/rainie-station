@@ -130,8 +130,29 @@ body::before {
               inset 0 0 30px rgba(255, 105, 180, 0.05);
   overflow: hidden;
   display: flex;
-  -webkit-mask-image: none;
-  mask-image: none;
+
+  /* 固定洞的参数（圆心固定在中间，半径恒定） */
+  --hole-x: 50%;
+  --hole-y: 50%;
+  --hole-radius: 380px;
+
+  /* 中间挖一个圆洞，其他区域正常显示卡片 */
+  -webkit-mask-image: radial-gradient(
+    circle at var(--hole-x) var(--hole-y),
+    transparent 0,
+    transparent var(--hole-radius),
+    black calc(var(--hole-radius) + 30px)
+  );
+  mask-image: radial-gradient(
+    circle at var(--hole-x) var(--hole-y),
+    transparent 0,
+    transparent var(--hole-radius),
+    black calc(var(--hole-radius) + 30px)
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
 }
 
 /* ✅ 用 1.png 替代线条大象 SVG：居中、半透明、水印感 */
