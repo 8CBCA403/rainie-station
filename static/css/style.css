@@ -148,14 +148,12 @@ body::before {
   transition: --hole-radius 0.35s ease-out, --hole-x 0.25s ease-out, --hole-y 0.25s ease-out;
 }
 
-/* 关键：针对桌面端强行锁死 */
-@media (min-width: 1025px) {
+@media (pointer: fine) {
   .card {
-    /* 这里加 !important 是为了彻底切断 JS 的 setProperty 影响 */
-   --hole-x: 50% !important;
-  --hole-y: 50% !important;
-  --hole-radius: 0px;
-  transition: --hole-radius 0.4s ease-out;
+    --hole-x: 50% !important;
+    --hole-y: 50% !important;
+    --hole-radius: 0px;
+    transition: --hole-radius 0.4s ease-out;
   }
 }
 

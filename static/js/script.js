@@ -255,6 +255,7 @@ if (mainCard) {
   };
 
   const isDesktop = window.matchMedia('(pointer: fine)').matches;
+  const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
 
   if (isDesktop) {
     mainCard.addEventListener('mouseenter', () => {
@@ -266,26 +267,28 @@ if (mainCard) {
     mainCard.addEventListener('mouseleave', clearHole);
   }
 
-  mainCard.addEventListener(
-    'touchstart',
-    (evt) => {
-      const touch = evt.touches[0];
-      if (!touch) return;
-      setHole(touch.clientX, touch.clientY, MOBILE_RADIUS);
-    },
-    { passive: true }
-  );
+  if (isCoarsePointer) {
+    mainCard.addEventListener(
+      'touchstart',
+      (evt) => {
+        const touch = evt.touches[0];
+        if (!touch) return;
+        setHole(touch.clientX, touch.clientY, MOBILE_RADIUS);
+      },
+      { passive: true }
+    );
 
-  mainCard.addEventListener(
-    'touchmove',
-    (evt) => {
-      const touch = evt.touches[0];
-      if (!touch) return;
-      setHole(touch.clientX, touch.clientY, MOBILE_RADIUS);
-    },
-    { passive: true }
-  );
+    mainCard.addEventListener(
+      'touchmove',
+      (evt) => {
+        const touch = evt.touches[0];
+        if (!touch) return;
+        setHole(touch.clientX, touch.clientY, MOBILE_RADIUS);
+      },
+      { passive: true }
+    );
 
-  mainCard.addEventListener('touchend', clearHole);
-  mainCard.addEventListener('touchcancel', clearHole);
+    mainCard.addEventListener('touchend', clearHole);
+    mainCard.addEventListener('touchcancel', clearHole);
+  }
 }
