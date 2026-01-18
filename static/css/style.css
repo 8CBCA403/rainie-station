@@ -150,10 +150,13 @@ body::before {
 
 @media (pointer: fine) {
   .card {
-    --hole-x: 50% !important;
-    --hole-y: 50% !important;
-    --hole-radius: 0px;
-    transition: --hole-radius 0.4s ease-out;
+    /* 桌面端直接关闭遮罩效果，整张卡片常亮 */
+    --hole-x: 50%;
+    --hole-y: 50%;
+    --hole-radius: 520px;
+    -webkit-mask-image: none;
+    mask-image: none;
+    transition: none;
   }
 }
 
