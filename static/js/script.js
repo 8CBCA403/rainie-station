@@ -234,12 +234,11 @@ const mainCard = document.querySelector('.card');
 if (mainCard) {
   const DESKTOP_RADIUS = 380;
 
-  // 桌面端：圆心固定在 CSS 中央，只通过 JS 控制半径
   mainCard.addEventListener('mouseenter', () => {
     mainCard.style.setProperty('--hole-radius', `${DESKTOP_RADIUS}px`);
   });
 
   mainCard.addEventListener('mouseleave', () => {
-    mainCard.style.setProperty('--hole-radius', `${DESKTOP_RADIUS}px`);
+    mainCard.style.setProperty('--hole-radius', '0px');
   });
 }
