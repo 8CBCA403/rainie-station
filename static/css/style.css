@@ -130,34 +130,8 @@ body::before {
               inset 0 0 30px rgba(255, 105, 180, 0.05);
   overflow: hidden;
   display: flex;
-
-  /* 默认变量（移动端使用） */
-  --hole-x: 50%;
-  --hole-y: 50%;
-  --hole-radius: 0px;
-
-  /* 遮罩逻辑 */
-  -webkit-mask-image: radial-gradient(circle at var(--hole-x) var(--hole-y), transparent 0, transparent var(--hole-radius), black calc(var(--hole-radius) + 30px));
-  mask-image: radial-gradient(circle at var(--hole-x) var(--hole-y), transparent 0, transparent var(--hole-radius), black calc(var(--hole-radius) + 30px));
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-
-  /* 只保留一个 transition，确保半径和位置都有动画 */
-  transition: --hole-radius 0.35s ease-out, --hole-x 0.25s ease-out, --hole-y 0.25s ease-out;
-}
-
-@media (pointer: fine) {
-  .card {
-    /* 桌面端直接关闭遮罩效果，整张卡片常亮 */
-    --hole-x: 50%;
-    --hole-y: 50%;
-    --hole-radius: 520px;
-    -webkit-mask-image: none;
-    mask-image: none;
-    transition: none;
-  }
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 /* ✅ 用 1.png 替代线条大象 SVG：居中、半透明、水印感 */
