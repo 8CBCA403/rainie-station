@@ -249,7 +249,18 @@ if (mainCard && window.matchMedia) {
   if (window.matchMedia('(pointer: coarse)').matches) {
     const MOBILE_RADIUS = 75;
 
+    function shouldShowMobileHole(touch) {
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      if (touch.clientY > viewportHeight / 2) {
+        mainCard.style.setProperty('--hole-radius', '0px');
+        return false;
+      }
+      return true;
+    }
+
     function updateHoleFromTouch(touch) {
+      if (!shouldShowMobileHole(touch)) return;
+
       const rect = mainCard.getBoundingClientRect();
       const x = ((touch.clientX - rect.left) / rect.width) * 100;
       const y = ((touch.clientY - rect.top) / rect.height) * 100;
