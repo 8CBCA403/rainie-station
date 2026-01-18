@@ -131,10 +131,10 @@ body::before {
   overflow: hidden;
   display: flex;
 
-  /* 固定洞的参数（圆心固定在中间，半径恒定） */
+  /* 固定洞的参数（圆心固定在中间，半径默认关闭） */
   --hole-x: 50%;
   --hole-y: 50%;
-  --hole-radius: 380px;
+  --hole-radius: 0px;
 
   /* 中间挖一个圆洞，其他区域正常显示卡片 */
   -webkit-mask-image: radial-gradient(
