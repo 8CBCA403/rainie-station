@@ -233,63 +233,12 @@ const mainCard = document.querySelector('.card');
 
 if (mainCard) {
   const DESKTOP_RADIUS = 380;
-  const MOBILE_RADIUS = 75;
 
-  const setHole = (clientX, clientY, radius) => {
-    const rect = mainCard.getBoundingClientRect();
-    const xPercent = ((clientX - rect.left) / rect.width) * 100;
-    const yPercent = ((clientY - rect.top) / rect.height) * 100;
-    mainCard.style.setProperty('--hole-x', `${xPercent}%`);
-    mainCard.style.setProperty('--hole-y', `${yPercent}%`);
-    mainCard.style.setProperty('--hole-radius', `${radius}px`);
-  };
+  mainCard.addEventListener('mouseenter', () => {
+    mainCard.style.setProperty('--hole-radius', `${DESKTOP_RADIUS}px`);
+  });
 
-  const setRadiusOnly = (radius) => {
-    mainCard.style.setProperty('--hole-radius', `${radius}px`);
-  };
-
-  const clearHole = () => {
+  mainCard.addEventListener('mouseleave', () => {
     mainCard.style.setProperty('--hole-radius', '0px');
-    mainCard.style.setProperty('--hole-x', '50%');
-    mainCard.style.setProperty('--hole-y', '50%');
-  };
-
-  const isDesktop = window.matchMedia('(pointer: fine)').matches;
-  const hasRealTouch =
-    ("ontouchstart" in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
-
-  if (isDesktop) {
-    mainCard.addEventListener('mouseenter', () => {
-      mainCard.style.removeProperty('--hole-x');
-      mainCard.style.removeProperty('--hole-y');
-      setRadiusOnly(DESKTOP_RADIUS);
-    });
-
-    mainCard.addEventListener('mouseleave', clearHole);
-  }
-
-  if (hasRealTouch) {
-    mainCard.addEventListener(
-      'touchstart',
-      (evt) => {
-        const touch = evt.touches[0];
-        if (!touch) return;
-        setHole(touch.clientX, touch.clientY, MOBILE_RADIUS);
-      },
-      { passive: true }
-    );
-
-    mainCard.addEventListener(
-      'touchmove',
-      (evt) => {
-        const touch = evt.touches[0];
-        if (!touch) return;
-        setHole(touch.clientX, touch.clientY, MOBILE_RADIUS);
-      },
-      { passive: true }
-    );
-
-    mainCard.addEventListener('touchend', clearHole);
-    mainCard.addEventListener('touchcancel', clearHole);
-  }
+  });
 }
