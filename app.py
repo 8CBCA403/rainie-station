@@ -16,7 +16,6 @@ def get_db_connection():
     return conn
 
 def init_db():
-    """初始化数据库结构"""
     if not DB_PATH.parent.exists():
         DB_PATH.parent.mkdir(parents=True)
     
@@ -25,30 +24,6 @@ def init_db():
         con.executescript(f.read())
     con.close()
     print(f"Database schema initialized at {DB_PATH}")
-    
-    # 尝试填充初始数据
-    seed_tours()
-
-def seed_tours():
-    """填充初始巡演数据"""
-    con = get_db_connection()
-    cur = con.cursor()
-    
-    # 检查是否已有数据
-    cur.execute("SELECT count(*) FROM tours")
-    if cur.fetchone()[0] == 0:
-        print("Seeding initial tour data...")
-        tours = [
-            ("佛山", "2026-01-10T19:00:00", "佛山国际体育文化演艺中心"),
-            ("绍兴", "2026-01-17T19:00:00", "西施篮球中心"),
-            ("苏州", "2026-03-07T19:00:00", "苏州奥林匹克体育中心"),
-            ("泉州", "2026-03-14T19:30:00", "晋江第二体育中心体育馆"),
-        ]
-        cur.executemany("INSERT INTO tours (city, tour_date, venue) VALUES (?, ?, ?)", tours)
-        con.commit()
-        print("Tour data seeded.")
-    
-    con.close()
 
 # 主页 - 直接返回静态页面
 @app.get("/")

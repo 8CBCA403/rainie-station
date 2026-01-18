@@ -25,7 +25,6 @@ function renderTourSlider() {
   if (upcomingTours.length > 0) {
     tourInfoEl.style.display = "flex";
     
-    // 渲染每个巡演卡片
     upcomingTours.forEach((tour, index) => {
       const card = document.createElement("div");
       card.className = "tour-card";
@@ -50,48 +49,11 @@ function renderTourSlider() {
       sliderEl.appendChild(card);
     });
     
-    // 循环逻辑：把第一张克隆一份放到最后
-    if (upcomingTours.length > 1) {
-        // 标记一下这是克隆的，方便识别（虽然这里没用上）
-        const firstCardClone = sliderEl.children[0].cloneNode(true);
-        firstCardClone.dataset.isClone = "true";
-        // 需要给克隆的倒计时也加个 update 逻辑吗？
-        // 其实 updateAllCountdowns 会遍历所有 .countdown，包括克隆的
-        // 但是克隆节点的 id 会重复，这在 querySelector 时可能有点小问题，
-        // 不过我们用的是 querySelectorAll('.countdown') 遍历，
-        // 然后读取 dataset.date，所以只要 dataset 拷过来了就没问题。
-        // 唯独 id 重复不太规范，去掉 id
-        const cloneCountdown = firstCardClone.querySelector('.countdown');
-        if (cloneCountdown) cloneCountdown.removeAttribute('id');
-        
-        // sliderEl.appendChild(firstCardClone); 
-        // 等等，用户是想要无限循环吗？
-        // 如果是“佛山的左箭头就应该是最后一张”，意味着：
-        // 这是一个循环队列。
-        // 现在的结构是 flex row scroll-snap。
-        // 做无缝循环比较复杂，需要 JS 配合 scroll 事件跳转。
-        // 简单点：当点击左箭头且当前是第一张时，跳到最后一张？
-    }
-    
-    // 立即更新一次
     updateAllCountdowns();
-
-    // 重新绑定滚动事件（因为 DOM 可能是新生成的）
-    bindScrollEvent(sliderEl);
 
   } else {
     tourInfoEl.style.display = "none";
   }
-}
-
-function bindScrollEvent(slider) {
-    // 移除旧的（虽然不太容易拿到旧的引用，但可以直接覆盖绑定）
-    // 这里使用简单的逻辑：如果已经有 onwheel 属性就不绑定了，或者更稳妥的方式
-    // 实际上每次 innerHTML 清空后，元素本身还在吗？
-    // tour-slider 元素是一直在的，只是 children 变了。
-    // 所以只需要在页面加载时绑定一次即可。
-    // 修正：上面的 bindScrollEvent 其实没必要，因为 sliderEl 是一直存在的 dom 节点。
-    // 只要在最下面绑定一次就行。
 }
 
 function updateAllCountdowns() {

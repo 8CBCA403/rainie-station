@@ -311,39 +311,10 @@ body::before {
   flex-direction: column;
   align-items: flex-end;
   animation: fadeIn 1s ease-out;
-  width: 100%; /* 占满右侧容器 */
-  overflow: visible; /* 允许箭头超出 */
-  
-  /* 移除之前的 padding-right，让 slider-container 自己控制布局 */
-  padding-right: 0; 
-  position: relative; 
-}
-
-/* 新增：滑块容器包裹层，用于定位箭头 */
-.slider-container {
+  width: 100%;
+  overflow: visible;
+  padding-right: 0;
   position: relative;
-  /* 恢复撑满，不要 fit-content 了 */
-  width: 100%; 
-  display: flex;
-  align-items: center;
-  justify-content: flex-end; /* 内容靠右对齐 */
-}
-
-/* 导航箭头样式 */
-.nav-btn {
-  /* ... 保持不变 ... */
-}
-
-.nav-btn.prev {
-  /* 左箭头放到文字左边 */
-  left: auto;
-  right: 100%; /* 紧贴内容左侧 */
-  margin-right: 10px; /* 留点空隙 */
-}
-.nav-btn.next {
-  /* 右箭头固定在最右侧 */
-  right: -35px; /* 放到容器外侧 */
-  left: auto;
 }
 
 /* 导航箭头样式 */
