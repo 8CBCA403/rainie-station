@@ -161,6 +161,33 @@ body::before {
   }
 }
 
+@media (pointer: coarse) {
+  .card {
+    --hole-x: 50%;
+    --hole-y: 50%;
+    --hole-radius: 0px;
+
+    -webkit-mask-image: radial-gradient(
+      circle at var(--hole-x) var(--hole-y),
+      transparent 0,
+      transparent var(--hole-radius),
+      black calc(var(--hole-radius) + 30px)
+    );
+    mask-image: radial-gradient(
+      circle at var(--hole-x) var(--hole-y),
+      transparent 0,
+      transparent var(--hole-radius),
+      black calc(var(--hole-radius) + 30px)
+    );
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+
+    transition: --hole-radius 0.3s ease-out, --hole-x 0.1s linear, --hole-y 0.1s linear;
+  }
+}
+
 /* ✅ 用 1.png 替代线条大象 SVG：居中、半透明、水印感 */
 .elephant-wrap {
   position: absolute;
@@ -692,13 +719,5 @@ html {
     /* 增加内边距，让内容呼吸感更强 */
     padding-left: 5%;
     padding-right: 5%;
-
-    /* 手机端不挖洞，保持完整卡片可见 */
-    --hole-radius: 0px;
-    transition: none;
-  }
-
-  .card.reveal-hole {
-    --hole-radius: 0px;
   }
 }

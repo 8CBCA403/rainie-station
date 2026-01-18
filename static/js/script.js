@@ -231,14 +231,60 @@ if (slider) {
 
 const mainCard = document.querySelector('.card');
 
-if (mainCard && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
-  const DESKTOP_RADIUS = 380;
+if (mainCard && window.matchMedia) {
+  // 桌面端：固定圆心，hover 放大/收回
+  if (window.matchMedia('(pointer: fine)').matches) {
+    const DESKTOP_RADIUS = 380;
 
-  mainCard.addEventListener('mouseenter', () => {
-    mainCard.style.setProperty('--hole-radius', `${DESKTOP_RADIUS}px`);
-  });
+    mainCard.addEventListener('mouseenter', () => {
+      mainCard.style.setProperty('--hole-radius', `${DESKTOP_RADIUS}px`);
+    });
 
-  mainCard.addEventListener('mouseleave', () => {
-    mainCard.style.setProperty('--hole-radius', '0px');
-  });
+    mainCard.addEventListener('mouseleave', () => {
+      mainCard.style.setProperty('--hole-radius', '0px');
+    });
+  }
+
+  // 移动端：根据触摸点更新圆心，半径固定 75px
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    const MOBILE_RADIUS = 75;
+
+    function updateHoleFromTouch(touch) {
+      const rect = mainCard.getBoundingClientRect();
+      const x = ((touch.clientX - rect.left) / rect.width) * 100;
+      const y = ((touch.clientY - rect.top) / rect.height) * 100;
+
+      mainCard.style.setProperty('--hole-x', `${x}%`);
+      mainCard.style.setProperty('--hole-y', `${y}%`);
+      mainCard.style.setProperty('--hole-radius', `${MOBILE_RADIUS}px`);
+    }
+
+    mainCard.addEventListener(
+      'touchstart',
+      (evt) => {
+        const touch = evt.touches[0];
+        if (!touch) return;
+        updateHoleFromTouch(touch);
+      },
+      { passive: true }
+    );
+
+    mainCard.addEventListener(
+      'touchmove',
+      (evt) => {
+        const touch = evt.touches[0];
+        if (!touch) return;
+        updateHoleFromTouch(touch);
+      },
+      { passive: true }
+    );
+
+    mainCard.addEventListener('touchend', () => {
+      mainCard.style.setProperty('--hole-radius', '0px');
+    });
+
+    mainCard.addEventListener('touchcancel', () => {
+      mainCard.style.setProperty('--hole-radius', '0px');
+    });
+  }
 }
