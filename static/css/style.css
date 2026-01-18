@@ -130,33 +130,33 @@ body::before {
               inset 0 0 30px rgba(255, 105, 180, 0.05);
   overflow: hidden;
   display: flex;
-
-  /* 固定洞的参数（圆心固定在中间，半径默认关闭） */
-  --hole-x: 50%;
-  --hole-y: 50%;
-  --hole-radius: 0px;
-
-  /* 中间挖一个圆洞，其他区域正常显示卡片 */
-  -webkit-mask-image: radial-gradient(
-    circle at var(--hole-x) var(--hole-y),
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
-  mask-image: radial-gradient(
-    circle at var(--hole-x) var(--hole-y),
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
 }
 
 @media (pointer: fine) {
   .card {
+    /* 固定洞的参数（圆心固定在中间，半径默认关闭） */
+    --hole-x: 50%;
+    --hole-y: 50%;
+    --hole-radius: 0px;
+
+    /* 中间挖一个圆洞，其他区域正常显示卡片 */
+    -webkit-mask-image: radial-gradient(
+      circle at var(--hole-x) var(--hole-y),
+      transparent 0,
+      transparent var(--hole-radius),
+      black calc(var(--hole-radius) + 30px)
+    );
+    mask-image: radial-gradient(
+      circle at var(--hole-x) var(--hole-y),
+      transparent 0,
+      transparent var(--hole-radius),
+      black calc(var(--hole-radius) + 30px)
+    );
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+
     transition: --hole-radius 0.6s ease-in-out;
   }
 }

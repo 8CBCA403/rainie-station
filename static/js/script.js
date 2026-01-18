@@ -231,7 +231,7 @@ if (slider) {
 
 const mainCard = document.querySelector('.card');
 
-if (mainCard) {
+if (mainCard && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
   const DESKTOP_RADIUS = 380;
 
   mainCard.addEventListener('mouseenter', () => {
