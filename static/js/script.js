@@ -235,57 +235,42 @@ if (mainCard) {
   const DESKTOP_RADIUS = 380;
   const MOBILE_RADIUS = 75;
 
-  // 初始化坐标：确保桌面端默认就在中心
-  mainCard.style.setProperty('--hole-x', '50%');
-  mainCard.style.setProperty('--hole-y', '50%');
+  const setHole = (clientX, clientY, radius) => {
+    const rect = mainCard.getBoundingClientRect();
+    const xPercent = ((clientX - rect.left) / rect.width) * 100;
+    const yPercent = ((clientY - rect.top) / rect.height) * 100;
+    mainCard.style.setProperty('--hole-x', `${xPercent}%`);
+    mainCard.style.setProperty('--hole-y', `${yPercent}%`);
+    mainCard.style.setProperty('--hole-radius', `${radius}px`);
+  };
 
- // 简化的 setHole，不再修改 x 和 y
-const setHoleRadius = (radius) => {
-  mainCard.style.setProperty('--hole-radius', `${radius}px`);
-};
-
-// 桌面端鼠标移入：只改半径
-mainCard.addEventListener('mouseenter', () => {
-  setHoleRadius(380); 
-  // 关键：强制把之前的行内坐标清空，回归 CSS 控制
-  mainCard.style.removeProperty('--hole-x');
-  mainCard.style.removeProperty('--hole-y');
-});
-
-mainCard.addEventListener('mouseleave', () => {
-  setHoleRadius(0);
-});
-
-// 【极其重要】：把原本的 mainCard.addEventListener('mousemove', ...) 整段代码删除！
-// 只要这段删了，你截图里看到的那个 style="--hole-x: ..." 就不会再动了。
+  const setRadiusOnly = (radius) => {
+    mainCard.style.setProperty('--hole-radius', `${radius}px`);
+  };
 
   const clearHole = () => {
     mainCard.style.setProperty('--hole-radius', '0px');
-    // 离开后，重置坐标回中心，防止下次桌面端移入时位置偏离
     mainCard.style.setProperty('--hole-x', '50%');
     mainCard.style.setProperty('--hole-y', '50%');
   };
 
-  // --- 桌面端逻辑 ---
-  mainCard.addEventListener('mouseenter', (e) => {
-    // 关键：如果是手机触摸模拟的“假鼠标”事件，直接跳过，不理会
-    if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
-    
-    // 桌面端只管放大半径，坐标由初始值的 50% 决定
-    mainCard.style.setProperty('--hole-radius', `${DESKTOP_RADIUS}px`);
-  });
+  const isDesktop = window.matchMedia('(pointer: fine)').matches;
 
-  mainCard.addEventListener('mouseleave', () => {
-    clearHole();
-  });
+  if (isDesktop) {
+    mainCard.addEventListener('mouseenter', () => {
+      mainCard.style.removeProperty('--hole-x');
+      mainCard.style.removeProperty('--hole-y');
+      setRadiusOnly(DESKTOP_RADIUS);
+    });
 
-  // --- 移动端逻辑 ---
+    mainCard.addEventListener('mouseleave', clearHole);
+  }
+
   mainCard.addEventListener(
     'touchstart',
     (evt) => {
       const touch = evt.touches[0];
       if (!touch) return;
-      // 手机端：立即设置坐标并放大圆圈
       setHole(touch.clientX, touch.clientY, MOBILE_RADIUS);
     },
     { passive: true }
