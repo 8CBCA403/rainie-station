@@ -512,6 +512,18 @@ body::before {
   white-space: nowrap;
 }
 
+.test-banner {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 9999;
+  font-size: 64px;
+  font-weight: 700;
+  color: rgba(255, 0, 0, 0.9);
+  text-shadow: 0 0 16px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
 .date {
   margin-top: 26px; /* 把原来 #clock 的 margin-top 挪到这里 */
   font-family: "Courier New", monospace;
