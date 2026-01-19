@@ -260,12 +260,14 @@ body::before {
 
   .card:hover::before {
     transform: translateX(calc(var(--split-offset) * -1));
-    /* 锯齿边缘不需要恢复边框，因为形状本身就是边界 */
+    /* 分裂后，让内侧边框显现出来 */
+    border-right: 1px solid rgba(255, 105, 180, 0.2);
   }
 
   .card:hover::after {
     transform: translateX(var(--split-offset));
-    /* 锯齿边缘不需要恢复边框 */
+    /* 分裂后，让内侧边框显现出来 */
+    border-left: 1px solid rgba(255, 105, 180, 0.2);
   }
   
   /* ... */
