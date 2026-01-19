@@ -36,7 +36,23 @@ function renderTourSlider() {
       const station = document.createElement("div");
       station.className = "station-name";
       // 后台返回的 city 已经是 "西安" 等中文，所以不需要再拼接 "站" 字
-      station.innerText = `${tour.city}`; 
+      // 为了防止用户看到英文 "Xi'an"，我们在这里做一个兜底的映射
+      const cityMap = {
+        "Xi'an": "西安",
+        "Suzhou": "苏州",
+        "Quanzhou": "泉州",
+        "Chengdu": "成都",
+        "Shenzhen": "深圳",
+        "Hefei": "合肥",
+        "Foshan": "佛山",
+        "Ningbo": "宁波",
+        "Jinan": "济南",
+        "Guiyang": "贵阳",
+        "Nanchang": "南昌"
+      };
+      
+      const cityName = cityMap[tour.city] || tour.city;
+      station.innerText = `${cityName}`; 
       
       const countdown = document.createElement("div");
       countdown.className = "countdown";
