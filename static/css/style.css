@@ -178,45 +178,76 @@ body::before {
 /* 左半边 */
 .card::before {
   left: 0;
+  width: 50.1%; /* 稍微多一点点重叠 */
   border-radius: 60px 0 0 60px;
-  /* 初始无右边框 */
-  border-right: 0px solid transparent; 
+  border-right: none; 
   
-  /* Mask 保持不变 */
-  -webkit-mask-image: radial-gradient(
-    circle at calc(100% + var(--split-offset)) 50%,
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
-  mask-image: radial-gradient(
-    circle at calc(100% + var(--split-offset)) 50%,
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
+  --tooth-w: 6px; /* 锯齿宽度 */
+  --tooth-h: 12px; /* 锯齿高度 */
+  
+  /* 使用 mask 组合：锯齿边缘 + 挖洞 */
+  -webkit-mask-image: 
+    /* 1. 锯齿边缘：用 conic-gradient 绘制三角形 */
+    conic-gradient(from 135deg at right, transparent 90deg, black 0),
+    /* 2. 挖洞层 */
+    radial-gradient(
+      circle at calc(100% + var(--split-offset)) 50%,
+      transparent var(--hole-radius),
+      black calc(var(--hole-radius) + 0.5px)
+    );
+    
+  -webkit-mask-position: 
+    right top, /* 锯齿靠右 */
+    0 0;       /* 挖洞全屏 */
+    
+  -webkit-mask-size: 
+    var(--tooth-w) var(--tooth-h), /* 锯齿大小 */
+    100% 100%;                     /* 挖洞大小 */
+    
+  -webkit-mask-repeat: 
+    repeat-y,  /* 锯齿纵向重复 */
+    no-repeat; /* 挖洞不重复 */
+    
+  /* 关键：取交集，确保锯齿和挖洞同时生效 */
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 
 /* 右半边 */
 .card::after {
   right: 0;
+  width: 50.1%; /* 稍微多一点点重叠 */
   border-radius: 0 60px 60px 0;
-  /* 初始无左边框 */
-  border-left: 0px solid transparent;
+  border-left: none; 
   
-  /* Mask 保持不变 */
-  -webkit-mask-image: radial-gradient(
-    circle at calc(0% - var(--split-offset)) 50%,
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
-  mask-image: radial-gradient(
-    circle at calc(0% - var(--split-offset)) 50%,
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
+  --tooth-w: 6px;
+  --tooth-h: 12px;
+  
+  /* 使用 mask 组合：锯齿边缘 + 挖洞 */
+  -webkit-mask-image: 
+    /* 1. 锯齿边缘：反向三角形 */
+    conic-gradient(from -45deg at left, transparent 90deg, black 0),
+    /* 2. 挖洞层 */
+    radial-gradient(
+      circle at calc(0% - var(--split-offset)) 50%,
+      transparent var(--hole-radius),
+      black calc(var(--hole-radius) + 0.5px)
+    );
+    
+  -webkit-mask-position: 
+    left top, /* 锯齿靠左 */
+    0 0;
+    
+  -webkit-mask-size: 
+    var(--tooth-w) var(--tooth-h), 
+    100% 100%;
+    
+  -webkit-mask-repeat: 
+    repeat-y, 
+    no-repeat;
+    
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 
 /* Hover 时分裂，恢复内侧边框 */
