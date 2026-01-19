@@ -116,77 +116,146 @@ body::before {
   padding: 60px;
 }
 
+/* 定义动画变量，让 CSS 能平滑过渡偏移量 */
+@property --split-offset {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --hole-radius {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
 /* 横向主卡 */
 .card {
   position: relative;
   width: 88%;
   height: 72%;
-  border-radius: 60px;
+  display: flex;
+  
+  /* 默认变量值 */
+  --split-offset: 0px;
+  --hole-radius: 0px;
+  --cursor-x: 50%; /* 兜底 */
+  --cursor-y: 50%;
+  --card-w: 1000px; /* 兜底 */
+  
+  /* 让变量支持过渡动画 */
+  transition: --split-offset 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              --hole-radius 0.4s ease-out;
+}
+
+/* 用伪元素模拟分裂的背景 */
+.card::before,
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   border: 1px solid rgba(255, 105, 180, 0.2);
-  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6),
-              inset 0 0 30px rgba(255, 105, 180, 0.05);
-  overflow: hidden;
-  display: flex;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 0;
+  pointer-events: none; 
+  
+  /* 核心：挖洞 Mask */
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  /* 确保 Mask 尺寸覆盖足够大 */
+  -webkit-mask-size: 200% 200%; 
+  mask-size: 200% 200%;
 }
 
+/* 左半边 */
+.card::before {
+  left: 0;
+  border-radius: 60px 0 0 60px;
+  border-right: none; 
+  
+  /* 
+     计算 Mask 位置：
+     原始坐标: var(--cursor-x)
+     补偿偏移: + var(--split-offset) (因为元素往左跑了，洞要往右补)
+     
+     mask-position 的坐标原点是元素的左上角
+  */
+  -webkit-mask-image: radial-gradient(
+    circle at calc(var(--cursor-x) + var(--split-offset)) var(--cursor-y),
+    transparent 0,
+    transparent var(--hole-radius),
+    black calc(var(--hole-radius) + 30px)
+  );
+  mask-image: radial-gradient(
+    circle at calc(var(--cursor-x) + var(--split-offset)) var(--cursor-y),
+    transparent 0,
+    transparent var(--hole-radius),
+    black calc(var(--hole-radius) + 30px)
+  );
+}
+
+/* 右半边 */
+.card::after {
+  right: 0;
+  border-radius: 0 60px 60px 0;
+  border-left: none; 
+  
+  /* 
+     计算 Mask 位置：
+     原始坐标: var(--cursor-x)
+     相对右半边的坐标: var(--cursor-x) - (var(--card-w) / 2)
+     补偿偏移: - var(--split-offset) (因为元素往右跑了，洞要往左补)
+  */
+  -webkit-mask-image: radial-gradient(
+    circle at calc(var(--cursor-x) - (var(--card-w) / 2) - var(--split-offset)) var(--cursor-y),
+    transparent 0,
+    transparent var(--hole-radius),
+    black calc(var(--hole-radius) + 30px)
+  );
+  mask-image: radial-gradient(
+    circle at calc(var(--cursor-x) - (var(--card-w) / 2) - var(--split-offset)) var(--cursor-y),
+    transparent 0,
+    transparent var(--hole-radius),
+    black calc(var(--hole-radius) + 30px)
+  );
+}
+
+/* Hover 时分裂 */
 @media (pointer: fine) {
-  .card {
-    /* 固定洞的参数（圆心固定在中间，半径默认关闭） */
-    --hole-x: 50%;
-    --hole-y: 50%;
-    --hole-radius: 0px;
+  .card:hover {
+    --split-offset: 60px; /* 触发变量动画 */
+  }
 
-    /* 中间挖一个圆洞，其他区域正常显示卡片 */
-    -webkit-mask-image: radial-gradient(
-      circle at var(--hole-x) var(--hole-y),
-      transparent 0,
-      transparent var(--hole-radius),
-      black calc(var(--hole-radius) + 30px)
-    );
-    mask-image: radial-gradient(
-      circle at var(--hole-x) var(--hole-y),
-      transparent 0,
-      transparent var(--hole-radius),
-      black calc(var(--hole-radius) + 30px)
-    );
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-size: 100% 100%;
-    mask-size: 100% 100%;
-
-    transition: --hole-radius 0.6s ease-in-out;
+  .card:hover::before {
+    transform: translateX(calc(var(--split-offset) * -1));
+  }
+  .card:hover::after {
+    transform: translateX(var(--split-offset));
+  }
+  
+  /* 内容也跟着动一点点 */
+  .card:hover .content .left {
+    transform: translateX(-30px);
+  }
+  .card:hover .content .right {
+    transform: translateX(30px);
+  }
+  
+  .card:hover .roomno {
+    transform: translateX(30px);
+  }
+  .card:hover .brand-rail {
+    transform: translateX(30px);
   }
 }
 
-@media (pointer: coarse) {
-  .card {
-    --hole-x: 50%;
-    --hole-y: 50%;
-    --hole-radius: 0px;
-
-    -webkit-mask-image: radial-gradient(
-      circle at var(--hole-x) var(--hole-y),
-      transparent 0,
-      transparent var(--hole-radius),
-      black calc(var(--hole-radius) + 30px)
-    );
-    mask-image: radial-gradient(
-      circle at var(--hole-x) var(--hole-y),
-      transparent 0,
-      transparent var(--hole-radius),
-      black calc(var(--hole-radius) + 30px)
-    );
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-size: 100% 100%;
-    mask-size: 100% 100%;
-
-    transition: --hole-radius 0.3s ease-out, --hole-x 0.1s linear, --hole-y 0.1s linear;
-  }
-}
+/* 移除旧的 property 定义，避免冲突 */
+/* @property --hole-radius ... */
 
 /* ✅ 用 1.png 替代线条大象 SVG：居中、半透明、水印感 */
 .elephant-wrap {
@@ -225,6 +294,14 @@ body::before {
   display: flex;
   gap: 60px;
   padding: 70px 80px 70px 80px;
+}
+
+/* 为了动画效果，需要 transition */
+.content .left,
+.content .right,
+.roomno,
+.brand-rail {
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* 左：宣言/注释 */

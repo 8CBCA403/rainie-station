@@ -193,6 +193,51 @@ if (slider) {
 
 const mainCard = document.querySelector('.card');
 
+if (mainCard) {
+  // 恢复挖洞效果的 JS 逻辑
+  // 我们需要把鼠标坐标(px)传给 CSS，因为现在卡片分裂了，用百分比处理坐标会很麻烦
+  
+  const updateCursor = (x, y) => {
+    const rect = mainCard.getBoundingClientRect();
+    const relX = x - rect.left;
+    const relY = y - rect.top;
+    
+    // 传入绝对像素坐标和卡片总宽
+    mainCard.style.setProperty('--cursor-x', `${relX}px`);
+    mainCard.style.setProperty('--cursor-y', `${relY}px`);
+    mainCard.style.setProperty('--card-w', `${rect.width}px`);
+  };
+
+  // 桌面端 Hover 监听
+  mainCard.addEventListener('mousemove', (e) => {
+    updateCursor(e.clientX, e.clientY);
+  });
+
+  // 进出时控制半径开关 (配合 CSS transition)
+  mainCard.addEventListener('mouseenter', () => {
+    mainCard.style.setProperty('--hole-radius', '380px');
+  });
+  
+  mainCard.addEventListener('mouseleave', () => {
+    mainCard.style.setProperty('--hole-radius', '0px');
+  });
+
+  // 移动端 Touch 监听
+  mainCard.addEventListener('touchmove', (e) => {
+    if (e.touches[0]) {
+      updateCursor(e.touches[0].clientX, e.touches[0].clientY);
+      // 移动端保持开启
+      mainCard.style.setProperty('--hole-radius', '80px'); 
+    }
+  }, { passive: true });
+  
+  mainCard.addEventListener('touchend', () => {
+    mainCard.style.setProperty('--hole-radius', '0px');
+  });
+}
+
+const mainCard = document.querySelector('.card');
+
 if (mainCard && window.matchMedia) {
   // 桌面端：固定圆心，hover 放大/收回
   if (window.matchMedia('(pointer: fine)').matches) {
