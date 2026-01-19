@@ -18,8 +18,30 @@
       /* 让 Card 更宽一点，适应数据面板 */
       .card {
           --card-w: 1200px;
-          width: 92%;
-          max-width: 1200px;
+          width: 96%; /* 增加宽度 */
+          max-width: 1400px; /* 允许更宽 */
+      }
+      
+      /* 禁用 stats 页面的 Hover 动画 */
+      @media (pointer: fine) {
+          .card:hover {
+            width: 96% !important; /* 保持宽度不变 */
+          }
+          .card:hover::before {
+            opacity: 1 !important; /* 背景保持可见 */
+          }
+          .card:hover .content .left,
+          .card:hover .content .right,
+          .card:hover .roomno,
+          .card:hover .brand-rail {
+            transform: none !important; /* 禁止位移 */
+            opacity: 1 !important; /* 禁止淡出 */
+          }
+          .card:hover .elephant-wrap {
+            opacity: 1 !important;
+            transform: none !important;
+            filter: none !important;
+          }
       }
       
       .content {

@@ -129,7 +129,7 @@ body::before {
 /* 横向主卡 */
 .card {
   position: relative;
-  width: 88%;
+  width: 96%;
   height: 72%;
   display: flex;
   
