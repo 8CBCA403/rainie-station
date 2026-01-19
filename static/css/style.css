@@ -242,22 +242,29 @@ body::before {
   /* ... */
   
    /* 
-      关键修改：内容移动距离要跟背景一致，或者略小一点点但不能差太多
-      之前背景推开 140px，内容才动 50px，导致看起来“背景跑了，字还在原地”
-      现在让内容也动 120px，略微有一点视差，但基本同步
+      关键修改：内容移动距离要比背景大，让它们往两边“多退一点”
+      背景推开 140px，内容现在推开 180px
    */
    .card:hover .content .left {
-     transform: translateX(-120px);
+     transform: translateX(-180px);
    }
    .card:hover .content .right {
-     transform: translateX(120px);
+     transform: translateX(180px);
    }
    
    .card:hover .roomno {
-     transform: translateX(120px);
+     transform: translateX(180px);
    }
    .card:hover .brand-rail {
-     transform: translateX(120px);
+     transform: translateX(180px);
+   }
+   
+   /* 小象图标动画：分裂时缓缓隐藏 */
+   .card:hover .elephant-wrap {
+     opacity: 0;
+     transform: scale(0.95);
+     /* 增加一点模糊效果，模拟“消失”的感觉 */
+     filter: blur(4px);
    }
 }
 
@@ -273,6 +280,8 @@ body::before {
   justify-content: center;
   align-items: center;
   pointer-events: none;
+  /* 增加 transition 以支持 hover 时的平滑过渡 */
+  transition: opacity 0.8s ease, transform 0.8s ease, filter 0.8s ease;
 }
 .elephant-wrap img {
   width: clamp(420px, 38vw, 720px);
