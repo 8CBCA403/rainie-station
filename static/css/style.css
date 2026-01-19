@@ -175,9 +175,24 @@ body::before {
   mask-size: 100% 100%;
 }
 
+/* 
+   修复内容溢出问题：
+   当内容被推开 180px 时，原本卡片边缘可能遮挡了内容。
+   我们需要确保卡片本身或者内容容器允许溢出显示。
+   
+   但因为卡片本身有 border-radius 和 mask，内容溢出会被裁切。
+   解决思路：
+   1. 减小推开距离（比如改回 140px 或 160px），但这会减弱视觉效果。
+   2. 或者调整内容容器的 padding，给内容更多向内缩的空间。
+   
+   这里我们尝试调整 padding 和 flex 布局，让右侧内容（包括品牌栏）往左缩一点，
+   这样推开时就不会顶到最右边被切掉了。
+*/
+
 /* 左半边 */
 .card::before {
   left: 0;
+  width: 50%; /* 恢复无锯齿的 50% */
   border-radius: 60px 0 0 60px;
   /* 初始无右边框 */
   border-right: 0px solid transparent; 
@@ -200,6 +215,7 @@ body::before {
 /* 右半边 */
 .card::after {
   right: 0;
+  width: 50%; /* 恢复无锯齿的 50% */
   border-radius: 0 60px 60px 0;
   /* 初始无左边框 */
   border-left: 0px solid transparent;
