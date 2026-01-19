@@ -179,10 +179,11 @@ body::before {
   border-right: none; 
   
   /* 
-     Mask 位置固定在中心（视觉上的屏幕中央）
-     因为元素本身向左移了 var(--split-offset)
-     所以 Mask 必须向右补回 var(--split-offset) 才能保持不动
-     基准点是 100% (即左半边的右边缘，也就是卡片中心)
+     修复：Mask 应该相对于元素自身定位。
+     左半边卡片向左移了 var(--split-offset)
+     它的右边缘（原本是中心）现在也向左移了。
+     要让洞保持在视觉中心，Mask 中心应该在：
+     100% (当前右边缘) + var(--split-offset) (补回移动距离)
   */
   -webkit-mask-image: radial-gradient(
     circle at calc(100% + var(--split-offset)) 50%,
@@ -205,8 +206,10 @@ body::before {
   border-left: none; 
   
   /* 
-     基准点是 0% (即右半边的左边缘，也就是卡片中心)
-     元素向右移了 var(--split-offset)，Mask 向左补回
+     同理，右半边向右移了 var(--split-offset)
+     它的左边缘（原本是中心）向右移了。
+     要让洞保持在视觉中心，Mask 中心应该在：
+     0% (当前左边缘) - var(--split-offset) (补回移动距离)
   */
   -webkit-mask-image: radial-gradient(
     circle at calc(0% - var(--split-offset)) 50%,
@@ -225,8 +228,8 @@ body::before {
 /* Hover 时分裂 */
 @media (pointer: fine) {
   .card:hover {
-    --split-offset: 140px; /* 加大推开距离 */
-    --hole-radius: 380px;  /* 鼠标放上去直接变大，固定圆心 */
+    --split-offset: 140px; /* 卡片背景推开距离 */
+    --hole-radius: 380px;
   }
 
   .card:hover::before {
@@ -236,19 +239,23 @@ body::before {
     transform: translateX(var(--split-offset));
   }
   
-  /* 内容也跟着动 */
+  /* 
+     关键修改：内容移动距离要跟背景一致，或者略小一点点但不能差太多
+     之前背景推开 140px，内容才动 50px，导致看起来“背景跑了，字还在原地”
+     现在让内容也动 120px，略微有一点视差，但基本同步
+  */
   .card:hover .content .left {
-    transform: translateX(-50px);
+    transform: translateX(-120px);
   }
   .card:hover .content .right {
-    transform: translateX(50px);
+    transform: translateX(120px);
   }
   
   .card:hover .roomno {
-    transform: translateX(50px);
+    transform: translateX(120px);
   }
   .card:hover .brand-rail {
-    transform: translateX(50px);
+    transform: translateX(120px);
   }
 }
 
