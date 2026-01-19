@@ -688,11 +688,11 @@ html {
     transition: none;
     transform: none;
     
-    /* 重新定义尺寸：激进变宽，变短 */
-    width: 98% !important; 
+    /* 重新定义尺寸：更宽，接近全屏以缓解文字局促 */
+    width: 110% !important;
     height: auto !important;
-    min-height: 60vh; /* 缩短卡片高度 */
-    margin: 10px auto; 
+    min-height: 60vh; /* 长度缩短 */
+    margin: 15px -5%; /* 居中: (100% - 110%) / 2 */
     
     /* 
        核心：恢复 Mask，但是逻辑变了
@@ -729,31 +729,33 @@ html {
   }
 
   /* 小象图标：不再是背景纹理，而是真正被“掏出来”的底层内容 */
-  /* 但因为结构限制，小象在卡片内，被mask了就看不见了 */
-  /* 所以这里小象依然作为卡片内的水印存在，或者... */
-  /* 如果想要“透过洞看到小象”，那小象必须在卡片下面（body上） */
-  /* 鉴于当前 HTML 结构，小象在 .card 里面。
-     如果 mask 把卡片挖空了，那就直接透出 body 背景（轮播图）了。
-     所以“掏洞”效果就是：透过磨砂玻璃看到清晰的背景图。
-  */
-  
+  /* 激进调整：居中显示，透明度提高一点 */
   .elephant-wrap {
-    /* 手机端隐藏小象，或者把它挪到洞的位置？ */
-    /* 既然是“掏洞”，那应该是为了看清背景。小象如果是水印，就留着吧 */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 0;
-    opacity: 0.1;
+    opacity: 0.15; /* 稍微明显一点 */
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   .elephant-wrap img {
-    width: 80%;
+    width: 60%; /* 大小适中 */
+    height: auto;
     transform: none !important;
+    filter: drop-shadow(0 0 10px rgba(255, 182, 193, 0.5));
   }
 
   /* 5. 内容布局调整：上下垂直排列 */
   .content {
     flex-direction: column;
-    /* 减小左右内边距，给文字更多空间 */
-    padding: 60px 12px 40px; 
-    gap: 30px;
+    /* 极致压缩内边距 */
+    padding: 40px 10px 30px; 
+    gap: 20px; /* 减小间距 */
     width: 100%;
     height: 100%;
     zoom: 1; 
@@ -766,37 +768,34 @@ html {
     align-items: center;
     text-align: center;
     flex: 0 0 auto;
-    margin-top: 10px; 
+    margin-top: 5px; 
   }
   .meta {
     align-items: center;
-    gap: 12px;
+    gap: 8px;
   }
   
   /* 顶部 ROOM 64 STATION */
   .station {
-      font-size: 0.85rem;
-      letter-spacing: 3px;
+      font-size: 0.75rem; /* 更小 */
+      letter-spacing: 2px;
       color: #ffb6c1;
       font-weight: 500;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
   }
 
-  /* 调整标题字号，还原图片排版 */
+  /* 调整标题字号，整体大幅缩小 */
   .title {
-    font-size: 2.6rem; 
-    letter-spacing: 4px;
-    margin-bottom: 8px;
+    font-size: 2.0rem; /* 从 2.6rem 降到 2.0rem */
+    letter-spacing: 3px;
+    margin-bottom: 6px;
     line-height: 1.2;
-    /* 强制换行逻辑：如果想和图一样“房间里的”和“大象”分两行，需要HTML结构配合，或者依靠宽度挤压 */
-    /* 图中是：房间里的（第一行）大象（第二行），这里我们可以尝试用换行逻辑：如果想 挤压或者直接改 html里的”和“大象”分两行，需要HTML结构配合，或者依靠宽度挤压 */
-    /* 图中是：房间里的20第一行）大象（第二行），这里我们可以尝试用 padding 挤压或者直接改 html */
-    padding: 0 20px; 
+    padding: 0; 
   }
   
   .sub {
-    font-size: 1.0rem;
-    letter-spacing: 4px;
+    font-size: 0.9rem; /* 更小 */
+    letter-spacing: 3px;
     opacity: 0.9;
     color: rgba(255, 255, 255, 0.9);
   }
@@ -804,23 +803,23 @@ html {
   .notes {
     text-align: left; 
     align-items: flex-start;
-    margin-top: 30px;
-    gap: 16px; 
-    padding: 0 10px;
+    margin-top: 20px;
+    gap: 10px; /* 紧凑 */
+    padding: 0 5px;
     width: 100%;
   }
   .note {
-    font-size: 0.95rem; 
-    line-height: 1.6;
+    font-size: 0.8rem; /* 激进缩小 */
+    line-height: 1.4;
     color: rgba(255, 255, 255, 0.9);
     display: flex;
     align-items: flex-start;
   }
   .note .star {
-      margin-right: 8px;
-      font-size: 0.8rem;
+      margin-right: 6px;
+      font-size: 0.7rem;
       color: #ffb6c1;
-      margin-top: 4px;
+      margin-top: 3px;
   }
   
   /* 右侧（底部）信息 */
@@ -829,38 +828,38 @@ html {
     text-align: center;
     flex: 1;
     justify-content: flex-end; /* 沉底 */
-    margin-top: 20px;
-    padding-bottom: 20px;
+    margin-top: 15px;
+    padding-bottom: 15px;
     width: 100%;
   }
   
   .date {
-    font-size: 1.3rem; 
+    font-size: 1.1rem; /* 更小 */
     margin-top: 0;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
     color: rgba(255, 182, 193, 0.8);
-    letter-spacing: 4px;
+    letter-spacing: 3px;
   }
   #clock.clock {
-    font-size: 1.6rem; 
+    font-size: 1.3rem; /* 更小 */
     color: #ff69b4;
-    letter-spacing: 4px;
-    margin-bottom: 25px;
+    letter-spacing: 3px;
+    margin-bottom: 15px;
   }
   
   /* 分割线 */
   .divider {
-      width: 40px;
+      width: 30px;
       height: 1px;
       background: rgba(255, 182, 193, 0.5);
-      margin: 0 auto 25px;
+      margin: 0 auto 15px;
   }
   
   .next-label {
-      font-size: 0.75rem;
-      letter-spacing: 3px;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
       color: rgba(255, 255, 255, 0.6);
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       text-transform: uppercase;
   }
   
@@ -868,7 +867,7 @@ html {
       align-items: flex-start; /* 左对齐 */
       text-align: left;
       width: 100%;
-      padding: 0 15px;
+      padding: 0 10px;
       margin-top: 0;
   }
   
@@ -880,23 +879,23 @@ html {
   }
   
   .station-name {
-      font-size: 2.0rem;
+      font-size: 1.6rem; /* 缩小 */
       font-weight: bold;
       color: rgba(255, 255, 255, 0.95);
-      margin-bottom: 8px;
+      margin-bottom: 5px;
       text-shadow: 0 2px 10px rgba(0,0,0,0.2);
   }
   
   .countdown {
-      font-size: 1.0rem;
+      font-size: 0.9rem;
       color: rgba(255, 255, 255, 0.85);
-      letter-spacing: 2px;
-      margin-bottom: 6px;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
       font-family: "Courier New", monospace;
   }
   
   .venue-name {
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       color: rgba(255, 255, 255, 0.6);
       text-align: left;
   }
