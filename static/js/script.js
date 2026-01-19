@@ -212,9 +212,20 @@ if (mainCard) {
       const x = touch.clientX - rect.left;
       const y = touch.clientY - rect.top;
       
-      // 更新 CSS 变量
-      mainCard.style.setProperty('--touch-x', `${x}px`);
-      mainCard.style.setProperty('--touch-y', `${y}px`);
+      // 限制在上半屏 (卡片高度的 50%)
+      // 也可以用固定像素值，例如 rect.height * 0.55
+      const limitY = rect.height * 0.5;
+      
+      if (y <= limitY) {
+          // 更新 CSS 变量
+          mainCard.style.setProperty('--touch-x', `${x}px`);
+          mainCard.style.setProperty('--touch-y', `${y}px`);
+      } else {
+          // 如果手指滑到下半部分，保持 y 在边界处，或者不做处理
+          // 这里选择让 y 停留在分界线，防止洞跳到底部
+          mainCard.style.setProperty('--touch-x', `${x}px`);
+          mainCard.style.setProperty('--touch-y', `${limitY}px`);
+      }
     }
   }, { passive: true });
 }

@@ -766,15 +766,15 @@ html {
   .meta {
     align-items: center;
   }
-  /* 调整标题字号，看起来更像图里的比例 */
+  /* 调整标题字号，整体调小 */
   .title {
-    font-size: 2.4rem; 
-    letter-spacing: 6px;
+    font-size: 1.8rem; 
+    letter-spacing: 4px;
     margin-bottom: 5px;
   }
   .sub {
-    font-size: 1.1rem;
-    letter-spacing: 3px;
+    font-size: 0.95rem;
+    letter-spacing: 2px;
     opacity: 0.8;
   }
   
@@ -782,12 +782,12 @@ html {
     text-align: left; /* 还是左对齐好看点 */
     align-items: flex-start;
     margin-top: 20px;
-    gap: 15px;
-    padding: 0 10px;
+    gap: 12px; /* 间距稍微减小 */
+    padding: 0 5px;
   }
   .note {
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-size: 0.85rem; /* 字号调小 */
+    line-height: 1.5;
   }
   
   /* 右侧（底部）信息 */
@@ -796,17 +796,17 @@ html {
     text-align: center;
     flex: 1;
     justify-content: flex-end; /* 沉底 */
-    margin-top: 20px;
+    margin-top: 10px;
     padding-bottom: 20px;
   }
   
   .date {
-    font-size: 1.4rem;
+    font-size: 1.2rem; /* 字号调小 */
     margin-top: 0;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
   }
   #clock.clock {
-    font-size: 1.6rem;
+    font-size: 1.4rem; /* 字号调小 */
     color: #ff69b4;
   }
   
