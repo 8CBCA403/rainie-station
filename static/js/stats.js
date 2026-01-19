@@ -153,12 +153,19 @@ function renderSongs(songs, statsMap) {
         const songName = song.songname || song.name || song.songName;
         const albumName = song.albumname || song.album?.name || song.albumName || '';
         // 使用真实的发布时间，如果没有则显示横杠
-        let pubTime = song.time_public || song.pub_time || (song.album ? song.album.time_public : '-') || '-';
+        // 兼容字段: pubtime (时间戳), time_public (日期字符串)
+        let pubTime = song.pubtime || song.time_public || song.pub_time || (song.album ? song.album.time_public : '-') || '-';
 
         // 3. 时间格式化：支持时间戳转换
         if (/^\d+$/.test(pubTime)) {
-            const date = new Date(parseInt(pubTime) * 1000);
-            pubTime = date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0') + '-' + date.getDate().toString().padStart(2, '0');
+            // 如果是 10 位时间戳 (秒)，转毫秒
+            if (String(pubTime).length === 10) {
+                 pubTime = pubTime * 1000;
+            }
+            const date = new Date(parseInt(pubTime));
+            if (!isNaN(date.getTime())) {
+                pubTime = date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0') + '-' + date.getDate().toString().padStart(2, '0');
+            }
         }
 
         div.innerHTML = `
