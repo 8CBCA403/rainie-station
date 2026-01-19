@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+
+    <title>杨丞琳 - 音乐档案</title>
+
+    <link rel="icon" type="image/png" href="/static/img/1.png" />
+    <link rel="stylesheet" href="/static/css/desktop.css?v=7" />
+    <link rel="stylesheet" href="/static/css/mobile.css?v=1" />
+    <style>
+      /* stats.html specific styles */
+      .search-box {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .search-input {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 10px 15px;
+        border-radius: 4px;
+        font-size: 1rem;
+        flex: 1;
+        outline: none;
+      }
+      .search-btn {
+        background: rgba(255, 105, 180, 0.3);
+        border: 1px solid rgba(255, 105, 180, 0.5);
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .search-btn:hover {
+        background: rgba(255, 105, 180, 0.5);
+      }
+      
+      .singer-profile {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .singer-img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255, 105, 180, 0.5);
+      }
+      .singer-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .stat-item {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .stat-val {
+        color: #ffb6c1;
+        font-weight: bold;
+        margin-left: 5px;
+      }
+
+      .song-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 10px;
+      }
+      /* Custom scrollbar */
+      .song-list::-webkit-scrollbar {
+        width: 6px;
+      }
+      .song-list::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .song-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+      }
+
+      .song-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 12px 15px;
+        border-radius: 8px;
+        transition: background 0.2s;
+      }
+      .song-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .song-info {
+        display: flex;
+        flex-direction: column;
+      }
+      .song-name {
+        font-size: 1rem;
+        color: #fff;
+      }
+      .song-album {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 4px;
+      }
+      .song-action {
+        color: #ffb6c1;
+        font-size: 0.9rem;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- 动态背景轮播 -->
+    <div id="bg-slider">
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
+    </div>
+    <!-- 遮罩层 -->
+    <div id="bg-overlay"></div>
+
+    <div class="stage">
+      <div class="card">
+        <!-- 背景大象 -->
+        <div class="elephant-wrap">
+          <img src="/static/img/1.png" alt="Elephant Line Art" />
+        </div>
+
+        <!-- 房间号 -->
+        <div class="roomno">房间号：<b>MUSIC</b></div>
+
+        <!-- 内容 -->
+        <div class="content">
+          <div class="left">
+            <div class="meta">
+              <div class="station">QQ MUSIC STATION</div>
+              <div class="title">音乐档案</div>
+              <div class="sub">SINGER STATS</div>
+            </div>
+
+            <div class="search-box">
+              <input type="text" id="singer-name" class="search-input" value="杨丞琳" placeholder="输入歌手名...">
+              <button id="search-btn" class="search-btn">查询</button>
+            </div>
+
+            <div id="singer-info" class="singer-profile" style="display: none;">
+              <img id="singer-avatar" src="" alt="Singer" class="singer-img">
+              <div class="singer-stats">
+                <div class="stat-item">歌手: <span id="singer-title" class="stat-val"></span></div>
+                <div class="stat-item">单曲: <span id="song-count" class="stat-val"></span></div>
+                <div class="stat-item">专辑: <span id="album-count" class="stat-val"></span></div>
+              </div>
+            </div>
+            
+            <div class="notes">
+               <div class="note">
+                <div class="star">★</div>
+                <div class="txt">数据来源：QQ音乐 API</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="right" style="justify-content: flex-start; align-items: stretch; text-align: left;">
+             <div class="date" style="margin-bottom: 20px; font-size: 1.5rem;">热门单曲</div>
+             <div id="song-list" class="song-list">
+               <!-- Songs will be injected here -->
+               <div style="text-align: center; color: rgba(255,255,255,0.5); margin-top: 50px;">
+                 正在加载数据...
+               </div>
+             </div>
+          </div>
+        </div>
+
+        <!-- 右侧竖排品牌栏 -->
+        <div class="brand-rail">
+          <div class="vtext">Tree & Skyline Premier Hotel</div>
+          <div class="tag">The Elephant We See</div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/js/stats.js"></script>
+  </body>
+</html>
