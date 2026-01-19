@@ -766,7 +766,7 @@ html {
     align-items: center;
     text-align: center;
     flex: 0 0 auto;
-    margin-top: 60px; /* 大幅增加 margin-top */
+    margin-top: 40px; /* 减少 margin-top 拉紧距离 */
   }
   .meta {
     align-items: center;
