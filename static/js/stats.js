@@ -30,7 +30,7 @@ async function searchSinger(name) {
     document.getElementById('total-songs').textContent = '-';
     document.getElementById('total-albums').textContent = '-';
     document.getElementById('total-mvs').textContent = '-';
-    document.getElementById('total-collects').textContent = '-';
+    // document.getElementById('total-collects').textContent = '-';
 
     try {
         const response = await fetch(`/api/search_singer?name=${encodeURIComponent(name)}`);
@@ -111,7 +111,8 @@ function updateStats(stats) {
     document.getElementById('total-songs').textContent = stats.song_num || '-';
     document.getElementById('total-albums').textContent = stats.album_num || '-';
     document.getElementById('total-mvs').textContent = stats.mv_num || '-';
-    document.getElementById('total-collects').textContent = '-';
+    // 移除这行，因为 stats.html 里已经删除了 total-collects 元素，如果不删这行JS会报错中断
+    // document.getElementById('total-collects').textContent = '-';
 }
 
 async function fetchRealCollectCounts(songs) {
