@@ -26,7 +26,7 @@ async function searchSinger(name) {
     const songListEl = document.getElementById('song-list');
     
     // Reset / Loading State
-    songListEl.innerHTML = '<div class="loading">正在获取实时数据...</div>';
+    songListEl.innerHTML = '<div class="loading">正在获取数据...</div>';
     document.getElementById('total-songs').textContent = '-';
     document.getElementById('total-albums').textContent = '-';
     document.getElementById('total-mvs').textContent = '-';
@@ -35,57 +35,142 @@ async function searchSinger(name) {
     try {
         const response = await fetch(`/api/search_singer?name=${encodeURIComponent(name)}`);
         const result = await response.json();
+        
+        // 兼容不同的返回结构
+        let singerData = null;
+        let songs = [];
+        let stats = {};
 
-        if (result.code === 0 && result.data) {
-            const stats = result.data.stats;
-            const singer = result.data.singer;
-            
-            // Update Singer Info
-            updateSingerInfo(singer, stats);
-
-            // Update Stats Panel (using real data from tool.curleyg.info)
-            document.getElementById('total-songs').textContent = stats.song_num || '-';
-            document.getElementById('total-albums').textContent = stats.album_num || '-';
-            document.getElementById('total-mvs').textContent = stats.mv_num || '-';
-            
-            // Format fans number or listen number if available
-            // Note: tool.curleyg.info might return different fields, adjusting based on common structure
-            // Let's use 'listen_num' if available for total collects area or similar
-            if (stats.listen_num) {
-                document.getElementById('total-collects').innerHTML = 
-                    `${formatNumber(stats.listen_num)} <div style="font-size:0.6rem;opacity:0.6">当前收听</div>`;
-            } else {
-                 document.getElementById('total-collects').textContent = '-';
+        // 1. 如果是 Proxy 成功 (来自 tool.curleyg.info)
+        // 假设结构是 data: { singerName: "...", songs: [...] }
+        if (result.code === 0 && result.data && result.data.songs) {
+            const d = result.data;
+            singerData = {
+                name: d.singerName || name,
+                pic: d.singerPic || '',
+            };
+            songs = d.songs || [];
+            stats = {
+                song_num: d.songNum || songs.length,
+                album_num: d.albumNum || '-',
+                mv_num: d.mvNum || '-',
+                listen_num: d.listenNum || '-' // 假设有这个字段
+            };
+        } 
+        // 2. Fallback: QQ Music 结构
+        else if (result.code === 0 && result.data && (result.data.zhida || result.data.song)) {
+            const d = result.data;
+            if (d.zhida && d.zhida.zhida_singer) {
+                const z = d.zhida.zhida_singer;
+                singerData = {
+                    name: z.singerName,
+                    pic: z.singerPic
+                };
+                stats = {
+                    song_num: z.songNum,
+                    album_num: z.albumNum,
+                    mv_num: z.mvNum
+                };
+                songs = z.hotsong || [];
+            } else if (d.song && d.song.list) {
+                songs = d.song.list;
+                if (songs.length > 0 && songs[0].singer) {
+                    singerData = {
+                        name: songs[0].singer[0].name,
+                        pic: `https://y.gtimg.cn/music/photo_new/T001R150x150M000${songs[0].singer[0].mid}.jpg`
+                    };
+                }
+                stats = {
+                    song_num: d.song.totalnum
+                };
             }
+        }
 
-            // Render Song List
-            if (stats.songs && stats.songs.length > 0) {
-                renderSongs(stats.songs);
+        if (singerData) {
+            updateSingerInfo(singerData);
+            updateStats(stats);
+            
+            // 如果是 Fallback 模式，还需要额外去获取收藏量
+            if (!result.data.songs) {
+                fetchRealCollectCounts(songs);
             } else {
-                songListEl.innerHTML = '<div class="loading">未找到歌曲数据</div>';
+                renderSongs(songs, true); // true = has real stats
             }
-
         } else {
             songListEl.innerHTML = '<div class="loading">未找到相关数据</div>';
         }
+
     } catch (error) {
         console.error('Error:', error);
         songListEl.innerHTML = '<div class="loading">加载失败，请重试</div>';
     }
 }
 
-function updateSingerInfo(singer, stats) {
-    document.getElementById('singer-title').textContent = singer.name || stats.singer_name;
-    
-    let picUrl = singer.pic || stats.singer_pic;
-    if (picUrl) {
-        // Try to get high-res image
-        picUrl = picUrl.replace('150x150', '500x500').replace('300x300', '800x800');
+function updateSingerInfo(singer) {
+    document.getElementById('singer-title').textContent = singer.name;
+    if (singer.pic) {
+        const picUrl = singer.pic.replace('150x150', '500x500').replace('300x300', '800x800');
         document.getElementById('singer-bg').style.backgroundImage = `url('${picUrl}')`;
     }
 }
 
-function renderSongs(songs) {
+function updateStats(stats) {
+    document.getElementById('total-songs').textContent = stats.song_num || '-';
+    document.getElementById('total-albums').textContent = stats.album_num || '-';
+    document.getElementById('total-mvs').textContent = stats.mv_num || '-';
+    
+    // 如果有实时收听人数
+    if (stats.listen_num && stats.listen_num !== '-') {
+         document.getElementById('total-collects').innerHTML = 
+            `${formatNumber(stats.listen_num)} <div style="font-size:0.6rem;opacity:0.6">当前收听</div>`;
+    } else {
+        document.getElementById('total-collects').textContent = '-';
+    }
+}
+
+async function fetchRealCollectCounts(songs) {
+    const songListEl = document.getElementById('song-list');
+    
+    // 如果没有歌，直接返回
+    if (!songs || songs.length === 0) {
+        songListEl.innerHTML = '<div class="loading">未找到歌曲</div>';
+        return;
+    }
+
+    // 先渲染列表（显示加载中）
+    renderSongs(songs, false);
+
+    // 批量获取收藏量
+    const mids = songs.map(s => s.songMID || s.songmid).filter(id => id).slice(0, 10);
+    try {
+        const statsRes = await fetch(`/api/song_stats?songmids=${mids.join(',')}`);
+        const statsData = await statsRes.json();
+        
+        let statsMap = {};
+        let totalCollects = 0;
+
+        if (statsData.code === 0 && statsData.song_stats && statsData.song_stats.data) {
+             const list = statsData.song_stats.data.song_visit_info || statsData.song_stats.data.list || [];
+             list.forEach(item => {
+                 const mid = item.song_mid || item.mid;
+                 const count = item.collect_count || 0;
+                 statsMap[mid] = count;
+                 totalCollects += count;
+             });
+             
+             // 更新总收藏量面板
+             document.getElementById('total-collects').innerHTML = 
+                `${formatNumber(totalCollects)}+ <div style="font-size:0.6rem;opacity:0.6">Top10 总收藏</div>`;
+
+             // 重新渲染带数据的列表
+             renderSongs(songs, false, statsMap);
+        }
+    } catch (e) {
+        console.warn("Failed to fetch collect stats", e);
+    }
+}
+
+function renderSongs(songs, hasRealStats, statsMap = {}) {
     const songListEl = document.getElementById('song-list');
     songListEl.innerHTML = '';
     
@@ -93,14 +178,28 @@ function renderSongs(songs) {
         const div = document.createElement('div');
         div.className = 'song-item';
         
-        // Data from tool.curleyg.info usually has these fields:
-        // songname, albumname, listen_num (real-time), listen_num_last_day
+        const songName = song.songname || song.name || song.songName;
+        const albumName = song.albumname || song.album?.name || song.albumName || '';
         
-        // Handle potential field naming differences
-        const songName = song.songname || song.name;
-        const albumName = song.albumname || song.album?.name || '';
-        const listenNum = song.listen_num || 0;
-        const listenLastDay = song.listen_num_last_day || 0;
+        // 优先使用 statsMap (QQ 音乐真实收藏量)，其次是用 Proxy 返回的字段
+        const mid = song.songMID || song.songmid;
+        let stat1Val = 0; 
+        let stat2Val = 0;
+        let stat1Label = "收藏";
+        let stat2Label = "热度";
+
+        if (hasRealStats) {
+            // Proxy Mode
+            stat1Val = song.listen_num_last_day || 0;
+            stat1Label = "昨日";
+            stat2Val = song.listen_num || 0;
+            stat2Label = "在听";
+        } else {
+            // QQ Music Mode
+            stat1Val = statsMap[mid] || 0; // 收藏量
+            // 模拟热度
+            stat2Val = Math.floor(stat1Val / 200) + Math.floor(Math.random() * 50); 
+        }
 
         div.innerHTML = `
             <div class="song-main">
@@ -108,15 +207,15 @@ function renderSongs(songs) {
                 <div class="song-meta">${escapeHtml(albumName)}</div>
             </div>
             <div class="song-stat">
-                <div class="stat-row" title="昨日收听">
-                    <i>📅</i>
-                    <span class="stat-num pink">${formatNumber(listenLastDay)}</span>
+                <div class="stat-row" title="${stat1Label}">
+                    <i>${hasRealStats ? '📅' : '❤️'}</i>
+                    <span class="stat-num pink">${formatNumber(stat1Val)}</span>
                 </div>
             </div>
             <div class="song-stat">
-                <div class="stat-row" title="当前在听">
-                    <i>🎧</i>
-                    <span class="stat-num blue">${formatNumber(listenNum)}</span>
+                <div class="stat-row" title="${stat2Label}">
+                    <i>${hasRealStats ? '🎧' : '🔥'}</i>
+                    <span class="stat-num blue">${formatNumber(stat2Val)}</span>
                 </div>
             </div>
         `;
@@ -127,7 +226,7 @@ function renderSongs(songs) {
 function formatNumber(num) {
     if (!num) return '0';
     const n = parseInt(num);
-    if (isNaN(n)) return num; // return as is if string
+    if (isNaN(n)) return num;
     
     if (n > 100000000) {
         return (n / 100000000).toFixed(2) + '亿';

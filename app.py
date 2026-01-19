@@ -49,41 +49,50 @@ def search_singer():
     }
 
     try:
-        # 第一步：搜索歌手获取 MID
-        # 注意：这里直接模拟该网站的搜索行为
-        search_url = f"https://tool.curleyg.info/api/search?k={urllib.parse.quote(name)}"
-        req_search = urllib.request.Request(search_url, headers=headers)
+        # 直接使用截图中的接口: RankInfo
+        # 这个接口似乎直接返回了歌手的完整数据，包括歌曲列表和统计信息
+        target_url = f"https://tool.curleyg.info/RankInfo?keyword={urllib.parse.quote(name)}"
+        req = urllib.request.Request(target_url, headers=headers)
         
-        singer_mid = ""
-        singer_info = {}
-        
-        with urllib.request.urlopen(req_search) as response:
-            search_data = json.loads(response.read().decode('utf-8'))
-            if search_data.get("data") and len(search_data["data"]) > 0:
-                # 假设第一个结果就是目标歌手
-                singer = search_data["data"][0]
-                singer_mid = singer.get("mid")
-                singer_info = singer
-
-        if not singer_mid:
-             return jsonify({"code": -1, "msg": "Singer not found"}), 404
-
-        # 第二步：获取歌手详细数据（包含收听人数等）
-        detail_url = f"https://tool.curleyg.info/api/singer?mid={singer_mid}"
-        req_detail = urllib.request.Request(detail_url, headers=headers)
-        
-        with urllib.request.urlopen(req_detail) as response:
-            detail_data = json.loads(response.read().decode('utf-8'))
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode('utf-8'))
             
-            # 整合数据返回给前端，保持一定的结构兼容性
+            # 直接返回原始数据，前端再适配结构
+            # 假设结构是 { "singerName": "...", "listenNum": ..., "songs": [...] } 类似的
             return jsonify({
                 "code": 0,
-                "data": {
-                    "singer": singer_info,
-                    "stats": detail_data.get("data", {})
-                }
+                "data": data
             })
 
+    except Exception as e:
+        # 如果出错，回退到 QQ 音乐原生接口（保证至少能搜到人）
+        print(f"Proxy error: {e}, falling back to QQ Music")
+        return search_singer_fallback(name)
+
+def search_singer_fallback(name):
+    url = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp"
+    params = {
+        "w": name,
+        "t": 0,
+        "n": 5,
+        "page": 1,
+        "cr": 1,
+        "catZhida": 1,
+        "format": "json"
+    }
+    query_string = urllib.parse.urlencode(params)
+    full_url = f"{url}?{query_string}"
+    
+    headers = {
+        "Referer": "https://y.qq.com/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
+    try:
+        req = urllib.request.Request(full_url, headers=headers)
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
