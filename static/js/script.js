@@ -7,8 +7,8 @@ async function fetchTours() {
       const data = await response.json();
       if (data && data.length > 0) {
         upcomingTours = data;
-        renderTourSlider();
       }
+      renderTourSlider();
     }
   } catch (error) {
     console.error("Failed to fetch tours:", error);
