@@ -36,29 +36,12 @@ async function searchSinger(name) {
         const response = await fetch(`/api/search_singer?name=${encodeURIComponent(name)}`);
         const result = await response.json();
         
-        // 兼容不同的返回结构
         let singerData = null;
         let songs = [];
         let stats = {};
 
-        // 1. 如果是 Proxy 成功 (来自 tool.curleyg.info)
-        // 假设结构是 data: { singerName: "...", songs: [...] }
-        if (result.code === 0 && result.data && result.data.songs) {
-            const d = result.data;
-            singerData = {
-                name: d.singerName || name,
-                pic: d.singerPic || '',
-            };
-            songs = d.songs || [];
-            stats = {
-                song_num: d.songNum || songs.length,
-                album_num: d.albumNum || '-',
-                mv_num: d.mvNum || '-',
-                listen_num: d.listenNum || '-' // 假设有这个字段
-            };
-        } 
-        // 2. Fallback: QQ Music 结构
-        else if (result.code === 0 && result.data && (result.data.zhida || result.data.song)) {
+        // 仅处理 QQ Music 官方结构
+        if (result.code === 0 && result.data && (result.data.zhida || result.data.song)) {
             const d = result.data;
             if (d.zhida && d.zhida.zhida_singer) {
                 const z = d.zhida.zhida_singer;
@@ -89,13 +72,7 @@ async function searchSinger(name) {
         if (singerData) {
             updateSingerInfo(singerData);
             updateStats(stats);
-            
-            // 如果是 Fallback 模式，还需要额外去获取收藏量
-            if (!result.data.songs) {
-                fetchRealCollectCounts(songs);
-            } else {
-                renderSongs(songs, true); // true = has real stats
-            }
+            fetchRealCollectCounts(songs);
         } else {
             songListEl.innerHTML = '<div class="loading">未找到相关数据</div>';
         }
@@ -118,14 +95,7 @@ function updateStats(stats) {
     document.getElementById('total-songs').textContent = stats.song_num || '-';
     document.getElementById('total-albums').textContent = stats.album_num || '-';
     document.getElementById('total-mvs').textContent = stats.mv_num || '-';
-    
-    // 如果有实时收听人数
-    if (stats.listen_num && stats.listen_num !== '-') {
-         document.getElementById('total-collects').innerHTML = 
-            `${formatNumber(stats.listen_num)} <div style="font-size:0.6rem;opacity:0.6">当前收听</div>`;
-    } else {
-        document.getElementById('total-collects').textContent = '-';
-    }
+    document.getElementById('total-collects').textContent = '-';
 }
 
 async function fetchRealCollectCounts(songs) {
@@ -138,7 +108,7 @@ async function fetchRealCollectCounts(songs) {
     }
 
     // 先渲染列表（显示加载中）
-    renderSongs(songs, false);
+    renderSongs(songs, {});
 
     // 批量获取收藏量
     const mids = songs.map(s => s.songMID || s.songmid).filter(id => id).slice(0, 10);
@@ -163,14 +133,14 @@ async function fetchRealCollectCounts(songs) {
                 `${formatNumber(totalCollects)}+ <div style="font-size:0.6rem;opacity:0.6">Top10 总收藏</div>`;
 
              // 重新渲染带数据的列表
-             renderSongs(songs, false, statsMap);
+             renderSongs(songs, statsMap);
         }
     } catch (e) {
         console.warn("Failed to fetch collect stats", e);
     }
 }
 
-function renderSongs(songs, hasRealStats, statsMap = {}) {
+function renderSongs(songs, statsMap) {
     const songListEl = document.getElementById('song-list');
     songListEl.innerHTML = '';
     
@@ -180,26 +150,12 @@ function renderSongs(songs, hasRealStats, statsMap = {}) {
         
         const songName = song.songname || song.name || song.songName;
         const albumName = song.albumname || song.album?.name || song.albumName || '';
-        
-        // 优先使用 statsMap (QQ 音乐真实收藏量)，其次是用 Proxy 返回的字段
         const mid = song.songMID || song.songmid;
-        let stat1Val = 0; 
-        let stat2Val = 0;
-        let stat1Label = "收藏";
-        let stat2Label = "热度";
-
-        if (hasRealStats) {
-            // Proxy Mode
-            stat1Val = song.listen_num_last_day || 0;
-            stat1Label = "昨日";
-            stat2Val = song.listen_num || 0;
-            stat2Label = "在听";
-        } else {
-            // QQ Music Mode
-            stat1Val = statsMap[mid] || 0; // 收藏量
-            // 模拟热度
-            stat2Val = Math.floor(stat1Val / 200) + Math.floor(Math.random() * 50); 
-        }
+        
+        // 收藏量
+        const collectCount = statsMap[mid] || 0;
+        // 模拟热度 (仅作为视觉展示)
+        const heat = Math.floor(collectCount / 200) + Math.floor(Math.random() * 50);
 
         div.innerHTML = `
             <div class="song-main">
@@ -207,15 +163,15 @@ function renderSongs(songs, hasRealStats, statsMap = {}) {
                 <div class="song-meta">${escapeHtml(albumName)}</div>
             </div>
             <div class="song-stat">
-                <div class="stat-row" title="${stat1Label}">
-                    <i>${hasRealStats ? '📅' : '❤️'}</i>
-                    <span class="stat-num pink">${formatNumber(stat1Val)}</span>
+                <div class="stat-row" title="收藏量">
+                    <i>❤️</i>
+                    <span class="stat-num pink">${formatNumber(collectCount)}</span>
                 </div>
             </div>
             <div class="song-stat">
-                <div class="stat-row" title="${stat2Label}">
-                    <i>${hasRealStats ? '🎧' : '🔥'}</i>
-                    <span class="stat-num blue">${formatNumber(stat2Val)}</span>
+                <div class="stat-row" title="模拟热度">
+                    <i>🔥</i>
+                    <span class="stat-num blue">${formatNumber(heat)}</span>
                 </div>
             </div>
         `;
