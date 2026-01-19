@@ -146,111 +146,69 @@ body::before {
               width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* 用伪元素模拟分裂的背景 */
-.card::before,
-.card::after {
+/* 
+   单一背景层：解决拼接缝隙问题，实现完美圆形挖洞 
+   现在不再使用左右两个伪元素，而是只用 ::before 做背景
+*/
+.card::before {
   content: '';
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 50%;
+  inset: 0; /* 铺满整个卡片 */
+  width: 100%;
+  height: 100%;
+  
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
+  
+  /* 统一边框和圆角 */
   border: 1px solid rgba(255, 105, 180, 0.2);
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-radius: 60px;
+  
   z-index: 0;
   pointer-events: none; 
   
-  /* 核心：挖洞 Mask */
+  /* 核心：挖洞 Mask - 居中定位，无需计算偏移 */
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-size: 100% 100%; 
   mask-size: 100% 100%;
-  
-  /* 确保 mask 合成模式正确 */
   -webkit-mask-composite: source-over;
   mask-composite: add;
-}
 
-/* 
-   修复内容溢出问题：
-   当内容被推开 180px 时，原本卡片边缘可能遮挡了内容。
-   我们需要确保卡片本身或者内容容器允许溢出显示。
-   
-   但因为卡片本身有 border-radius 和 mask，内容溢出会被裁切。
-   解决思路：
-   1. 减小推开距离（比如改回 140px 或 160px），但这会减弱视觉效果。
-   2. 或者调整内容容器的 padding，给内容更多向内缩的空间。
-   
-   这里我们尝试调整 padding 和 flex 布局，让右侧内容（包括品牌栏）往左缩一点，
-   这样推开时就不会顶到最右边被切掉了。
-*/
-
-/* 左半边 */
-.card::before {
-  left: 0;
-  width: 50%; /* 恢复无锯齿的 50% */
-  border-radius: 60px 0 0 60px;
-  /* 初始无右边框 */
-  border-right: 0px solid transparent; 
-  
-  /* Mask 保持不变 */
   -webkit-mask-image: radial-gradient(
-    circle at calc(100% + var(--split-offset)) 50%,
+    circle at center,
     transparent 0,
     transparent var(--hole-radius),
     black calc(var(--hole-radius) + 30px)
   );
   mask-image: radial-gradient(
-    circle at calc(100% + var(--split-offset)) 50%,
+    circle at center,
     transparent 0,
     transparent var(--hole-radius),
     black calc(var(--hole-radius) + 30px)
   );
 }
 
-/* 右半边 */
+/* 移除不再需要的 ::after */
 .card::after {
-  right: 0;
-  width: 50%; /* 恢复无锯齿的 50% */
-  border-radius: 0 60px 60px 0;
-  /* 初始无左边框 */
-  border-left: 0px solid transparent;
-  
-  /* Mask 保持不变 */
-  -webkit-mask-image: radial-gradient(
-    circle at calc(0% - var(--split-offset)) 50%,
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
-  mask-image: radial-gradient(
-    circle at calc(0% - var(--split-offset)) 50%,
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
+  display: none;
 }
+
+/* 移除多余的 after 定义 */
+/* .card::after 已在上方设置为 display: none */
 
 /* Hover 时分裂，恢复内侧边框 */
 @media (pointer: fine) {
   /* 关键修复：定义 hover 时变量的变化，否则背景不会动 */
   .card:hover {
     width: 96%; /* 卡片变宽，模拟推开效果 */
-    --split-offset: 0px; /* 背景不物理分裂，保持圆孔完整 */
     --hole-radius: 380px;
   }
 
-  .card:hover::before {
-    transform: translateX(calc(var(--split-offset) * -1));
-    /* 锯齿边缘不需要恢复边框，因为形状本身就是边界 */
-  }
-
-  .card:hover::after {
-    transform: translateX(var(--split-offset));
-    /* 锯齿边缘不需要恢复边框 */
-  }
+  /* 移除不再需要的伪元素变换 */
+  /* .card:hover::before ... */
+  /* .card:hover::after ... */
   
   /* ... */
   
