@@ -97,10 +97,15 @@ async function searchSinger(name) {
             
             updateStats(stats || {});
             
-            // 直接渲染列表（不获取收藏量，只显示基础信息）
+            // 渲染歌曲列表
             renderSongs(songs, {});
+            
+            // 提取并渲染专辑列表
+            processAndRenderAlbums(songs);
+
         } else {
             songListEl.innerHTML = '<div class="loading">未找到相关数据</div>';
+            document.getElementById('album-list').innerHTML = '<div class="loading">暂无专辑</div>';
         }
 
     } catch (error) {
@@ -127,6 +132,68 @@ function updateStats(stats) {
     
     const mvEl = document.getElementById('total-mvs');
     if (mvEl) mvEl.textContent = stats.mv_num || '-';
+}
+
+function processAndRenderAlbums(songs) {
+    const albumListEl = document.getElementById('album-list');
+    if (!albumListEl) return;
+    
+    if (!songs || songs.length === 0) {
+        albumListEl.innerHTML = '<div class="loading">暂无专辑</div>';
+        return;
+    }
+
+    // 提取专辑信息并去重
+    const albumMap = new Map();
+    songs.forEach(song => {
+        if (song.album && song.album.mid) {
+            if (!albumMap.has(song.album.mid)) {
+                albumMap.set(song.album.mid, {
+                    mid: song.album.mid,
+                    name: song.album.name,
+                    // 尝试从歌曲时间获取大概的发布时间，因为 song.album 里通常没有详细时间
+                    // 或者如果 song.album 有 time_public 更好
+                    time_public: song.album.time_public || song.time_public || song.pubtime || ''
+                });
+            }
+        }
+    });
+
+    const albums = Array.from(albumMap.values());
+    
+    // 渲染
+    if (albums.length === 0) {
+        albumListEl.innerHTML = '<div class="loading">暂无专辑信息</div>';
+        return;
+    }
+
+    albumListEl.innerHTML = '';
+    albums.forEach(album => {
+        const div = document.createElement('div');
+        div.className = 'album-item';
+        
+        // 封面图
+        const picUrl = `https://y.gtimg.cn/music/photo_new/T002R300x300M000${album.mid}.jpg`;
+        
+        // 格式化时间
+        let pubTime = album.time_public;
+        if (/^\d+$/.test(pubTime)) { // 如果是时间戳
+             if (String(pubTime).length === 10) pubTime = pubTime * 1000;
+             const date = new Date(parseInt(pubTime));
+             if (!isNaN(date.getTime())) {
+                 pubTime = date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0') + '-' + date.getDate().toString().padStart(2, '0');
+             }
+        }
+
+        div.innerHTML = `
+            <div class="album-cover" style="background-image: url('${picUrl}')"></div>
+            <div class="album-info">
+                <div class="album-name" title="${escapeHtml(album.name)}">${escapeHtml(album.name)}</div>
+                <div class="album-date">${escapeHtml(pubTime)}</div>
+            </div>
+        `;
+        albumListEl.appendChild(div);
+    });
 }
 
 async function fetchRealCollectCounts(songs) {

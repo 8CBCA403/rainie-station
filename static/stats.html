@@ -174,6 +174,51 @@
       .stat-value.pink { color: #ffb6c1; }
       .stat-value.blue { color: #4facfe; }
       
+      /* 双栏布局容器 */
+      .lists-wrapper {
+          flex: 1;
+          display: flex;
+          gap: 20px;
+          min-height: 0; /* 关键：允许子元素滚动 */
+          margin-top: 10px;
+      }
+      
+      .list-section {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          min-width: 0; /* 防止溢出 */
+      }
+      
+      /* 左侧歌曲栏：稍微宽一点 */
+      .left-list {
+          flex: 1.4;
+      }
+      
+      /* 右侧专辑栏 */
+      .right-list {
+          flex: 1;
+      }
+
+      .section-header {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          padding: 0 5px;
+      }
+      .sec-title {
+          font-size: 1.1rem; 
+          letter-spacing: 2px;
+          color: #fff;
+          font-weight: bold;
+      }
+      .sec-sub {
+          font-size: 0.75rem; 
+          opacity: 0.4;
+          letter-spacing: 1px;
+          font-family: "DIN Alternate", sans-serif;
+      }
+
       /* 歌曲列表区域 */
       .list-container {
           flex: 1;
@@ -273,6 +318,48 @@
               display: none; /* 小屏隐藏最后一列 */
           }
       }
+
+      /* 专辑列表项样式 */
+      .album-item {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          padding: 12px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          transition: background 0.2s;
+          cursor: pointer;
+      }
+      .album-item:hover {
+          background: rgba(255, 255, 255, 0.08);
+      }
+      .album-cover {
+          width: 48px;
+          height: 48px;
+          border-radius: 6px;
+          background-size: cover;
+          background-position: center;
+          background-color: #222;
+          flex: 0 0 48px;
+      }
+      .album-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          overflow: hidden;
+      }
+      .album-name {
+          font-size: 0.95rem;
+          color: #fff;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+      }
+      .album-date {
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.4);
+          font-family: "DIN Alternate", sans-serif;
+      }
     </style>
   </head>
 
@@ -339,14 +426,31 @@
                 </div>
             </div>
 
-            <!-- 歌曲列表 -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: -10px;">
-                <div style="font-size: 1.1rem; letter-spacing: 2px;">热门歌曲</div>
-                <div style="font-size: 0.8rem; opacity: 0.5;">数据来源：QQ音乐官方接口</div>
-            </div>
-            
-            <div id="song-list" class="list-container">
-                <div class="loading">正在加载数据...</div>
+            <!-- 双栏列表区域：歌曲 + 专辑 -->
+            <div class="lists-wrapper">
+                
+                <!-- 左侧：热门歌曲 -->
+                <div class="list-section left-list">
+                    <div class="section-header">
+                        <div class="sec-title">热门歌曲</div>
+                        <div class="sec-sub">TOP SONGS</div>
+                    </div>
+                    <div id="song-list" class="list-container">
+                        <div class="loading">正在加载数据...</div>
+                    </div>
+                </div>
+
+                <!-- 右侧：精选专辑 -->
+                <div class="list-section right-list">
+                    <div class="section-header">
+                        <div class="sec-title">精选专辑</div>
+                        <div class="sec-sub">ALBUMS</div>
+                    </div>
+                    <div id="album-list" class="list-container">
+                        <div class="loading">等待数据...</div>
+                    </div>
+                </div>
+
             </div>
 
         </div>
