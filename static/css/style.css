@@ -156,7 +156,8 @@ body::before {
   top: 0;
   bottom: 0;
   width: 50%;
-  background: rgba(255, 255, 255, 0.03);
+  /* 恢复更强的磨砂质感：增加不透明度 */
+  background: rgba(255, 255, 255, 0.08); /* 从 0.03 增加到 0.08 */
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   border: 1px solid rgba(255, 105, 180, 0.2);
