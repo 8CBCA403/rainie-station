@@ -402,6 +402,8 @@ async function fetchLyrics(mid, songName, singerName) {
             const tiReg = /\[ti:(.*?)\]/;
             const arReg = /\[ar:(.*?)\]/;
             const alReg = /\[al:(.*?)\]/;
+            const byReg = /\[by:(.*?)\]/;
+            const offsetReg = /\[offset:(.*?)\]/;
             
             // Regex for timestamp
             const timeReg = /\[\d{2}:\d{2}\.\d{2,3}\]/g;
@@ -412,7 +414,15 @@ async function fetchLyrics(mid, songName, singerName) {
                 if (line.includes('曲：')) composer = line.replace(/.*曲：/, '').replace(/\]/, '').trim();
                 
                 // Clean lyrics
-                let cleanLine = line.replace(timeReg, '').replace(tiReg, '').replace(arReg, '').replace(alReg, '').trim();
+                let cleanLine = line
+                    .replace(timeReg, '')
+                    .replace(tiReg, '')
+                    .replace(arReg, '')
+                    .replace(alReg, '')
+                    .replace(byReg, '')
+                    .replace(offsetReg, '')
+                    .trim();
+                    
                 if (cleanLine) {
                     lyricText += cleanLine + '\n';
                 }
