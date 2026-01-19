@@ -33,22 +33,30 @@ def index():
 # API: 获取未来所有巡演
 @app.get("/api/upcoming-tours")
 def get_upcoming_tours():
-    con = get_db_connection()
-    # 查找 tour_date 大于现在的最近的所有场次
-    now = datetime.datetime.now().isoformat()
-    tours = con.execute(
-        "SELECT * FROM tours WHERE tour_date > ? ORDER BY tour_date ASC",
-        (now,)
-    ).fetchall()
-    con.close()
-    
-    return jsonify([
-        {
-            "city": tour["city"],
-            "date": tour["tour_date"],
-            "venue": tour["venue"]
-        } for tour in tours
-    ])
+    # 检查数据库是否存在
+    if not DB_PATH.exists():
+        return jsonify([])
+
+    try:
+        con = get_db_connection()
+        # 查找 tour_date 大于现在的最近的所有场次
+        now = datetime.datetime.now().isoformat()
+        tours = con.execute(
+            "SELECT * FROM tours WHERE tour_date > ? ORDER BY tour_date ASC",
+            (now,)
+        ).fetchall()
+        con.close()
+        
+        return jsonify([
+            {
+                "city": tour["city"],
+                "date": tour["tour_date"],
+                "venue": tour["venue"]
+            } for tour in tours
+        ])
+    except sqlite3.OperationalError:
+        # 如果表不存在等数据库错误，返回空列表
+        return jsonify([])
 
 if __name__ == "__main__":
     # 总是尝试初始化（为了应对schema变更或初次运行）

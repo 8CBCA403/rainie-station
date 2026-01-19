@@ -7,8 +7,12 @@ async function fetchTours() {
       const data = await response.json();
       if (data && data.length > 0) {
         upcomingTours = data;
+        renderTourSlider(); // 只有拿到数据才渲染
+      } else {
+        // 数据为空，可能要隐藏 slider
+        const tourInfoEl = document.getElementById("tour-info");
+        if (tourInfoEl) tourInfoEl.style.display = "none";
       }
-      renderTourSlider();
     }
   } catch (error) {
     console.error("Failed to fetch tours:", error);
