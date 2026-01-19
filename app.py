@@ -142,13 +142,16 @@ def song_stats():
         }
     }
     
-    data = json.dumps(payload).encode('utf-8')
+    # 关键修改：QQ 音乐接口有时不接受 raw body，而是需要 data=JSON
+    # 我们尝试直接发送 raw string，但确保 Content-Type 是 text/plain 或留空
+    # 或者，某些环境（如 requests）会自动处理，这里我们用 urllib
+    data = json.dumps(payload, ensure_ascii=False).encode('utf-8')
     
     headers = {
         "Referer": "https://y.qq.com/",
         "Origin": "https://y.qq.com",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Content-Type": "application/x-www-form-urlencoded",
+        # "Content-Type": "application/x-www-form-urlencoded", # 尝试移除这个，让它默认为 text/plain
         "Cookie": cookie_str
     }
     
@@ -157,9 +160,12 @@ def song_stats():
         full_url = f"{url}?g_tk={g_tk}"
         req = urllib.request.Request(full_url, data=data, headers=headers, method="POST")
         with urllib.request.urlopen(req) as response:
-            resp_data = json.loads(response.read().decode('utf-8'))
+            raw_resp = response.read().decode('utf-8')
+            # print(f"DEBUG: {raw_resp}") # 调试用
+            resp_data = json.loads(raw_resp)
             return jsonify(resp_data)
     except Exception as e:
+        print(f"Error fetching stats: {e}")
         return jsonify({"error": str(e)}), 500
 
 # API: 获取未来所有巡演
