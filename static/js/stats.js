@@ -180,6 +180,13 @@ function processAndRenderAlbums(songs) {
         return;
     }
 
+    // 按发布时间倒序排序 (如果有时间的话)
+    albums.sort((a, b) => {
+        const timeA = parseTime(a.time_public);
+        const timeB = parseTime(b.time_public);
+        return timeB - timeA;
+    });
+
     albumListEl.innerHTML = '';
     albums.forEach(album => {
         const div = document.createElement('div');
@@ -189,14 +196,7 @@ function processAndRenderAlbums(songs) {
         const picUrl = `https://y.gtimg.cn/music/photo_new/T002R300x300M000${album.mid}.jpg`;
         
         // 格式化时间
-        let pubTime = album.time_public;
-        if (/^\d+$/.test(pubTime)) { // 如果是时间戳
-             if (String(pubTime).length === 10) pubTime = pubTime * 1000;
-             const date = new Date(parseInt(pubTime));
-             if (!isNaN(date.getTime())) {
-                 pubTime = date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0') + '-' + date.getDate().toString().padStart(2, '0');
-             }
-        }
+        let pubTime = formatPubTime(album.time_public);
 
         div.innerHTML = `
             <div class="album-cover" style="background-image: url('${picUrl}')"></div>
@@ -207,6 +207,36 @@ function processAndRenderAlbums(songs) {
         `;
         albumListEl.appendChild(div);
     });
+}
+
+// 辅助函数：统一解析时间用于排序
+function parseTime(timeStr) {
+    if (!timeStr) return 0;
+    // 如果是时间戳 (数字或字符串)
+    if (/^\d+$/.test(timeStr)) {
+        let ts = parseInt(timeStr);
+        if (String(ts).length === 10) ts *= 1000;
+        return ts;
+    }
+    // 如果是日期字符串 YYYY-MM-DD
+    const d = new Date(timeStr);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+// 辅助函数：统一格式化显示时间
+function formatPubTime(timeStr) {
+    if (!timeStr) return '-';
+    
+    // 如果是时间戳
+    if (/^\d+$/.test(timeStr)) {
+         let ts = parseInt(timeStr);
+         if (String(ts).length === 10) ts *= 1000;
+         const date = new Date(ts);
+         if (!isNaN(date.getTime())) {
+             return date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0') + '-' + date.getDate().toString().padStart(2, '0');
+         }
+    }
+    return timeStr; // 原样返回（如果是 YYYY-MM-DD 格式）
 }
 
 async function fetchRealCollectCounts(songs) {
