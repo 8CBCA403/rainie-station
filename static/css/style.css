@@ -270,7 +270,10 @@ body::before {
      transform: translateX(180px);
    }
    .card:hover .brand-rail {
+     /* 推出去的同时，直接淡出消失 */
      transform: translateX(180px);
+     opacity: 0;
+     transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease-out 0.2s;
    }
    
    /* 小象图标动画：分裂时缓缓隐藏 */
