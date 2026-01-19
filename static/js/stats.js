@@ -24,11 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function searchSinger(name) {
     const songListEl = document.getElementById('song-list');
-    const singerTitleEl = document.getElementById('singer-title');
-    const singerBgEl = document.getElementById('singer-bg');
     
     // Reset / Loading State
-    songListEl.innerHTML = '<div class="loading">正在加载数据...</div>';
+    songListEl.innerHTML = '<div class="loading">正在获取实时数据...</div>';
     document.getElementById('total-songs').textContent = '-';
     document.getElementById('total-albums').textContent = '-';
     document.getElementById('total-mvs').textContent = '-';
@@ -39,37 +37,32 @@ async function searchSinger(name) {
         const result = await response.json();
 
         if (result.code === 0 && result.data) {
-            // Check for smart box info (zhida) for singer details
-            const zhida = result.data.zhida;
-            let singerData = null;
-            let songs = [];
+            const stats = result.data.stats;
+            const singer = result.data.singer;
+            
+            // Update Singer Info
+            updateSingerInfo(singer, stats);
 
-            if (zhida && zhida.zhida_singer) {
-                singerData = zhida.zhida_singer;
-                songs = singerData.hotsong || [];
-            } else if (result.data.song && result.data.song.list) {
-                songs = result.data.song.list;
-                // Try to extract singer info from the first song
-                if (songs.length > 0 && songs[0].singer && songs[0].singer.length > 0) {
-                    singerData = {
-                        singerName: songs[0].singer[0].name,
-                        singerPic: `https://y.gtimg.cn/music/photo_new/T001R150x150M000${songs[0].singer[0].mid}.jpg`,
-                        songNum: result.data.song.totalnum, // Total songs found in search
-                        albumNum: '-',
-                        mvNum: '-'
-                    };
-                }
-            }
-
-            if (singerData) {
-                updateSingerInfo(singerData);
-            }
-
-            if (songs.length > 0) {
-                // Fetch stats for these songs (collect count)
-                await fetchAndRenderSongs(songs);
+            // Update Stats Panel (using real data from tool.curleyg.info)
+            document.getElementById('total-songs').textContent = stats.song_num || '-';
+            document.getElementById('total-albums').textContent = stats.album_num || '-';
+            document.getElementById('total-mvs').textContent = stats.mv_num || '-';
+            
+            // Format fans number or listen number if available
+            // Note: tool.curleyg.info might return different fields, adjusting based on common structure
+            // Let's use 'listen_num' if available for total collects area or similar
+            if (stats.listen_num) {
+                document.getElementById('total-collects').innerHTML = 
+                    `${formatNumber(stats.listen_num)} <div style="font-size:0.6rem;opacity:0.6">当前收听</div>`;
             } else {
-                songListEl.innerHTML = '<div class="loading">未找到歌曲</div>';
+                 document.getElementById('total-collects').textContent = '-';
+            }
+
+            // Render Song List
+            if (stats.songs && stats.songs.length > 0) {
+                renderSongs(stats.songs);
+            } else {
+                songListEl.innerHTML = '<div class="loading">未找到歌曲数据</div>';
             }
 
         } else {
@@ -81,81 +74,49 @@ async function searchSinger(name) {
     }
 }
 
-function updateSingerInfo(data) {
-    document.getElementById('singer-title').textContent = data.singerName;
-    if (data.singerPic) {
-        // Use a higher resolution image if possible, or the one provided
-        // QQ Music singer images: T001R150x150M000... -> T001R500x500M000...
-        const bigPic = data.singerPic.replace('150x150', '500x500');
-        document.getElementById('singer-bg').style.backgroundImage = `url('${bigPic}')`;
+function updateSingerInfo(singer, stats) {
+    document.getElementById('singer-title').textContent = singer.name || stats.singer_name;
+    
+    let picUrl = singer.pic || stats.singer_pic;
+    if (picUrl) {
+        // Try to get high-res image
+        picUrl = picUrl.replace('150x150', '500x500').replace('300x300', '800x800');
+        document.getElementById('singer-bg').style.backgroundImage = `url('${picUrl}')`;
     }
-
-    document.getElementById('total-songs').textContent = data.songNum || '-';
-    document.getElementById('total-albums').textContent = data.albumNum || '-';
-    document.getElementById('total-mvs').textContent = data.mvNum || '-';
 }
 
-async function fetchAndRenderSongs(songs) {
+function renderSongs(songs) {
     const songListEl = document.getElementById('song-list');
-    
-    // Get list of song mids to fetch stats
-    const mids = songs.map(s => s.songMID || s.songmid).filter(id => id).slice(0, 10); // Limit to 10 for batch
-    
-    let statsMap = {};
-    let totalCollects = 0;
-
-    try {
-        const statsRes = await fetch(`/api/song_stats?songmids=${mids.join(',')}`);
-        const statsData = await statsRes.json();
-        
-        if (statsData.code === 0 && statsData.song_stats && statsData.song_stats.data) {
-             const list = statsData.song_stats.data.song_visit_info || statsData.song_stats.data.list || [];
-             list.forEach(item => {
-                 // The key might be song_mid or just mid inside the object
-                 // QQ Music structure varies. Usually it returns a map or list.
-                 // Let's assume list with song_mid
-                 const mid = item.song_mid || item.mid;
-                 const count = item.collect_count || 0;
-                 statsMap[mid] = count;
-                 totalCollects += count;
-             });
-        }
-    } catch (e) {
-        console.warn("Failed to fetch detailed stats", e);
-    }
-
-    // Update Total Collects Display
-    document.getElementById('total-collects').textContent = formatNumber(totalCollects) + '+';
-
-    // Render List
     songListEl.innerHTML = '';
+    
     songs.forEach((song, index) => {
-        const mid = song.songMID || song.songmid;
-        const songName = song.songName || song.songname;
-        const albumName = song.albumName || song.albumname;
-        const collectCount = statsMap[mid] || 0;
-        
-        // Fake "Listening Now" based on collect count ratio (just for visual simulation of the screenshot)
-        // In reality, we don't have this data.
-        const listeningNow = Math.floor(collectCount / 200) + Math.floor(Math.random() * 50);
-
         const div = document.createElement('div');
         div.className = 'song-item';
+        
+        // Data from tool.curleyg.info usually has these fields:
+        // songname, albumname, listen_num (real-time), listen_num_last_day
+        
+        // Handle potential field naming differences
+        const songName = song.songname || song.name;
+        const albumName = song.albumname || song.album?.name || '';
+        const listenNum = song.listen_num || 0;
+        const listenLastDay = song.listen_num_last_day || 0;
+
         div.innerHTML = `
             <div class="song-main">
                 <div class="song-title ${index < 3 ? 'active' : ''}">${index + 1}. ${escapeHtml(songName)}</div>
                 <div class="song-meta">${escapeHtml(albumName)}</div>
             </div>
             <div class="song-stat">
-                <div class="stat-row" title="总收藏量">
-                    <i>❤️</i>
-                    <span class="stat-num pink">${formatNumber(collectCount)}</span>
+                <div class="stat-row" title="昨日收听">
+                    <i>📅</i>
+                    <span class="stat-num pink">${formatNumber(listenLastDay)}</span>
                 </div>
             </div>
             <div class="song-stat">
-                <div class="stat-row" title="当前模拟热度">
-                    <i>🔥</i>
-                    <span class="stat-num blue">${formatNumber(listeningNow)}</span>
+                <div class="stat-row" title="当前在听">
+                    <i>🎧</i>
+                    <span class="stat-num blue">${formatNumber(listenNum)}</span>
                 </div>
             </div>
         `;
@@ -165,18 +126,21 @@ async function fetchAndRenderSongs(songs) {
 
 function formatNumber(num) {
     if (!num) return '0';
-    if (num > 100000000) {
-        return (num / 100000000).toFixed(2) + '亿';
+    const n = parseInt(num);
+    if (isNaN(n)) return num; // return as is if string
+    
+    if (n > 100000000) {
+        return (n / 100000000).toFixed(2) + '亿';
     }
-    if (num > 10000) {
-        return (num / 10000).toFixed(1) + 'w';
+    if (n > 10000) {
+        return (n / 10000).toFixed(1) + 'w';
     }
-    return num.toString();
+    return n.toString();
 }
 
 function escapeHtml(text) {
     if (!text) return '';
-    return text
+    return String(text)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
