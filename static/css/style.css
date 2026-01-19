@@ -221,6 +221,12 @@ body::before {
 
 /* Hover 时分裂，恢复内侧边框 */
 @media (pointer: fine) {
+  /* 关键修复：定义 hover 时变量的变化，否则背景不会动 */
+  .card:hover {
+    --split-offset: 140px; 
+    --hole-radius: 380px;
+  }
+
   .card:hover::before {
     transform: translateX(calc(var(--split-offset) * -1));
     /* 分裂后，让内侧边框显现出来 */
