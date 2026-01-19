@@ -211,16 +211,16 @@ body::before {
     transparent var(--hole-radius),
     black calc(var(--hole-radius) + 30px)
   );
-  mask-image::radial-gradient(before {
-    circle at calc(0% - var(transform: tra))s5t%,
-    transearent 0,
-  cctransparentpvar(--hole-radius),t-offset) * -1));
-    black calc(var(/* 分裂后，让内侧边框显) +出来增加精)
-  )致
+  mask-image: radial-gradient(
+    circle at calc(0% - var(--split-offset)) 50%,
+    transparent 0,
+    transparent var(--hole-radius),
+    black calc(var(--hole-radius) + 30px)
+  );
 }
-感 */
-/* Hover 时分裂，恢复内侧边框 */ border-right: 1px solid rgba(255, 105, 180, 0.2);
-@media (pointer: fine) {  }
+
+/* Hover 时分裂，恢复内侧边框 */
+@media (pointer: fine) {
   .card:hover::after {
     transform: translateX(var(--split-offset));
     /* 分裂后，让内侧边框显现出来 */
