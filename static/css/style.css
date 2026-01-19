@@ -752,8 +752,8 @@ html {
   .content {
     flex-direction: column;
     /* 极致压缩内边距 */
-    padding: 20px 10px 20px; 
-    gap: 10px; /* 减小间距 */
+    padding: 15px 10px 15px; 
+    gap: 8px; /* 进一步减小间距 */
     width: 100%;
     height: 100%;
     zoom: 1; 
@@ -766,27 +766,27 @@ html {
     align-items: center;
     text-align: center;
     flex: 0 0 auto;
-    margin-top: 40px; /* 减少 margin-top 拉紧距离 */
+    margin-top: 25px; /* 减少 margin-top 拉紧距离 */
   }
   .meta {
     align-items: center;
-    gap: 12px;
+    gap: 8px; /* 减小间距 */
   }
   
   /* 顶部 ROOM 64 STATION */
   .station {
-      font-size: 0.85rem;
-      letter-spacing: 3px;
+      font-size: 0.7rem; /* 变小 */
+      letter-spacing: 2px;
       color: #ffb6c1;
       font-weight: 500;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
   }
 
   /* 调整标题字号，还原图片排版 */
   .title {
-    font-size: 1.8rem; 
-    letter-spacing: 4px;
-    margin-bottom: 8px;
+    font-size: 1.6rem; /* 变小 */
+    letter-spacing: 3px;
+    margin-bottom: 6px;
     line-height: 1.2;
     /* 强制换行逻辑：如果想和图一样“房间里的”和“大象”分两行，需要HTML结构配合，或者依靠宽度挤压 */
     /* 图中是：房间里的（第一行）大象（第二行），这里我们可以尝试用换行逻辑：如果想 挤压或者直接改 html里的”和“大象”分两行，需要HTML结构配合，或者依靠宽度挤压 */
@@ -795,8 +795,8 @@ html {
   }
   
   .sub {
-    font-size: 1.0rem;
-    letter-spacing: 4px;
+    font-size: 0.85rem; /* 变小 */
+    letter-spacing: 3px;
     opacity: 0.9;
     color: rgba(255, 255, 255, 0.9);
   }
@@ -804,22 +804,22 @@ html {
   .notes {
     text-align: left; 
     align-items: flex-start;
-    margin-top: 30px;
-    gap: 16px; 
+    margin-top: 20px; /* 减小间距 */
+    gap: 12px; /* 减小间距 */
     padding: 0 10px;
     width: 100%;
   }
   .note {
-    font-size: 1.15rem; /* 再次加大字体 */
-    line-height: 1.8;
+    font-size: 0.8rem; /* 变小 */
+    line-height: 1.5;
     color: rgba(255, 255, 255, 0.95);
     display: flex;
     align-items: center; /* 改为 center 对齐 */
     white-space: nowrap;
   }
   .note .star {
-      margin-right: 12px;
-      font-size: 1.0rem; /* 加大星星 */
+      margin-right: 8px;
+      font-size: 0.75rem; /* 变小 */
       color: #ffb6c1;
       margin-top: 0; 
       transform: none;
@@ -831,38 +831,38 @@ html {
     text-align: center;
     flex: 1;
     justify-content: flex-end; /* 沉底 */
-    margin-top: 20px;
-    padding-bottom: 20px;
+    margin-top: 15px; /* 减小间距 */
+    padding-bottom: 15px;
     width: 100%;
   }
   
   .date {
-    font-size: 1.3rem; 
+    font-size: 1.1rem; /* 变小 */
     margin-top: 0;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: rgba(255, 182, 193, 0.8);
-    letter-spacing: 4px;
+    letter-spacing: 3px;
   }
   #clock.clock {
-    font-size: 1.2rem; 
+    font-size: 1.0rem; /* 变小 */
     color: #ff69b4;
-    letter-spacing: 4px;
-    margin-bottom: 25px;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
   }
   
   /* 分割线 */
   .divider {
-      width: 40px;
+      width: 30px;
       height: 1px;
       background: rgba(255, 182, 193, 0.5);
-      margin: 0 auto 25px;
+      margin: 0 auto 20px;
   }
   
   .next-label {
-      font-size: 0.75rem;
-      letter-spacing: 3px;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
       color: rgba(255, 255, 255, 0.6);
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       text-transform: uppercase;
   }
   
@@ -882,23 +882,23 @@ html {
   }
   
   .station-name {
-      font-size: 1.5rem;
+      font-size: 1.3rem; /* 变小 */
       font-weight: bold;
       color: rgba(255, 255, 255, 0.95);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       text-shadow: 0 2px 10px rgba(0,0,0,0.2);
   }
   
   .countdown {
-      font-size: 1.0rem;
+      font-size: 0.85rem; /* 变小 */
       color: rgba(255, 255, 255, 0.85);
-      letter-spacing: 2px;
-      margin-bottom: 6px;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
       font-family: "Courier New", monospace;
   }
   
   .venue-name {
-      font-size: 0.85rem;
+      font-size: 0.75rem; /* 变小 */
       color: rgba(255, 255, 255, 0.6);
       text-align: left;
   }
