@@ -202,9 +202,37 @@ const mainCard = document.querySelector('.card');
 
 if (mainCard) {
   // 移动端 Touch 交互：随手指移动圆心
+  let isTouching = false;
+  
+  mainCard.addEventListener('touchstart', (e) => {
+      if (window.innerWidth <= 520) {
+          isTouching = true;
+          mainCard.style.setProperty('--hole-radius', '75px');
+          
+          // 立即更新位置，防止跳变
+          const touch = e.touches[0];
+          const rect = mainCard.getBoundingClientRect();
+          const x = touch.clientX - rect.left;
+          const y = touch.clientY - rect.top;
+          const limitY = rect.height * 0.5;
+          
+          if (y <= limitY) {
+            mainCard.style.setProperty('--touch-x', `${x}px`);
+            mainCard.style.setProperty('--touch-y', `${y}px`);
+          }
+      }
+  }, { passive: true });
+
+  mainCard.addEventListener('touchend', () => {
+      if (window.innerWidth <= 520) {
+          isTouching = false;
+          mainCard.style.setProperty('--hole-radius', '0px');
+      }
+  });
+
   mainCard.addEventListener('touchmove', (e) => {
     // 只有在手机竖屏模式下才启用这个逻辑
-    if (window.innerWidth <= 520) {
+    if (window.innerWidth <= 520 && isTouching) {
       const touch = e.touches[0];
       const rect = mainCard.getBoundingClientRect();
       
@@ -213,18 +241,19 @@ if (mainCard) {
       const y = touch.clientY - rect.top;
       
       // 限制在上半屏 (卡片高度的 50%)
-      // 也可以用固定像素值，例如 rect.height * 0.55
       const limitY = rect.height * 0.5;
       
       if (y <= limitY) {
-          // 更新 CSS 变量
+          // 在上半屏：正常移动
           mainCard.style.setProperty('--touch-x', `${x}px`);
           mainCard.style.setProperty('--touch-y', `${y}px`);
+          mainCard.style.setProperty('--hole-radius', '75px'); // 保持显示
       } else {
-          // 如果手指滑到下半部分，保持 y 在边界处，或者不做处理
-          // 这里选择让 y 停留在分界线，防止洞跳到底部
-          mainCard.style.setProperty('--touch-x', `${x}px`);
-          mainCard.style.setProperty('--touch-y', `${limitY}px`);
+          // 滑到下半屏：
+          // 方案A：洞消失
+          mainCard.style.setProperty('--hole-radius', '0px');
+          
+          // 方案B：洞停留在边界（当前方案已废弃，改为消失以免干扰）
       }
     }
   }, { passive: true });
