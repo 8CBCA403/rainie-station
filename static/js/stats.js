@@ -59,7 +59,11 @@ async function searchSinger(name) {
                 const z = d.zhida.zhida_singer;
                 singerData = {
                     name: z.singerName,
-                    pic: z.singerPic
+                    pic: z.singerPic,
+                    // 补充更多字段
+                    albumNum: z.albumNum,
+                    mvNum: z.mvNum,
+                    songNum: z.songNum
                 };
                 stats = {
                     song_num: z.songNum,
@@ -67,6 +71,7 @@ async function searchSinger(name) {
                     mv_num: z.mvNum
                 };
             }
+
 
             // 2. 优先从 song.list 获取歌曲列表
             if (d.song && d.song.list && d.song.list.length > 0) {
@@ -119,6 +124,23 @@ function updateSingerInfo(singer) {
     if (singer.pic) {
         const picUrl = singer.pic.replace('150x150', '500x500').replace('300x300', '800x800');
         document.getElementById('singer-bg').style.backgroundImage = `url('${picUrl}')`;
+    }
+    
+    // 如果有简介信息，可以在这里显示
+    // 目前搜索接口返回的简介较少，这里可以放一些静态文案或者基于统计数据的生成文案
+    const descEl = document.getElementById('singer-desc');
+    if (descEl) {
+        if (singer.songNum) {
+            descEl.style.display = 'block';
+            descEl.innerHTML = `
+                ${singer.name}，收录歌曲 <b>${singer.songNum}</b> 首，
+                专辑 <b>${singer.albumNum}</b> 张，
+                MV <b>${singer.mvNum}</b> 个。<br>
+                数据实时同步自 QQ 音乐。
+            `;
+        } else {
+            descEl.style.display = 'none';
+        }
     }
 }
 
