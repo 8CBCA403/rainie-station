@@ -108,11 +108,15 @@ function updateSingerInfo(singer) {
 }
 
 function updateStats(stats) {
-    document.getElementById('total-songs').textContent = stats.song_num || '-';
-    document.getElementById('total-albums').textContent = stats.album_num || '-';
-    document.getElementById('total-mvs').textContent = stats.mv_num || '-';
-    // 移除这行，因为 stats.html 里已经删除了 total-collects 元素，如果不删这行JS会报错中断
-    // document.getElementById('total-collects').textContent = '-';
+    const songEl = document.getElementById('total-songs');
+    if (songEl) songEl.textContent = stats.song_num || '-';
+    
+    // 之前 HTML 里删了这个元素，这里必须加判断，否则报错白屏
+    const albumEl = document.getElementById('total-albums');
+    if (albumEl) albumEl.textContent = stats.album_num || '-';
+    
+    const mvEl = document.getElementById('total-mvs');
+    if (mvEl) mvEl.textContent = stats.mv_num || '-';
 }
 
 async function fetchRealCollectCounts(songs) {
