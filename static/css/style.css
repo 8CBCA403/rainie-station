@@ -13,11 +13,8 @@ body {
   overflow: hidden;
 }
 
-@property --hole-radius {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
-}
+/* 移除旧的 property 定义，避免冲突 */
+/* @property --hole-radius ... */
 
 @property --hole-x {
   syntax: '<length-percentage>';
@@ -168,12 +165,12 @@ body::before {
   /* 核心：挖洞 Mask */
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  /* 
-     修复：必须设为 100% 100%，否则 calc() 计算的坐标会基于错误的尺寸
-     之前设为 200% 导致定位偏移
-  */
   -webkit-mask-size: 100% 100%; 
   mask-size: 100% 100%;
+  
+  /* 确保 mask 合成模式正确 */
+  -webkit-mask-composite: source-over;
+  mask-composite: add;
 }
 
 /* 
