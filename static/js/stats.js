@@ -40,8 +40,8 @@ async function searchSinger(name) {
         let songs = [];
         let stats = {};
 
-        // 仅处理 QQ Music 官方结构
-        if (result.code === 0 && result.data && (result.data.zhida || result.data.song)) {
+        // QQ Music 官方结构
+        if (result.code === 0 && result.data) {
             const d = result.data;
             
             // 1. 优先从 zhida 获取歌手统计信息
@@ -58,7 +58,7 @@ async function searchSinger(name) {
                 };
             }
 
-            // 2. 优先从 song.list 获取歌曲列表 (因为包含 pubtime 等详细字段)
+            // 2. 优先从 song.list 获取歌曲列表
             if (d.song && d.song.list && d.song.list.length > 0) {
                 songs = d.song.list;
                 // 如果之前没拿到歌手信息 (zhida不存在), 尝试从歌曲列表提取
@@ -77,10 +77,18 @@ async function searchSinger(name) {
             }
         }
 
-        if (singerData) {
-            updateSingerInfo(singerData);
-            updateStats(stats);
-            fetchRealCollectCounts(songs);
+        // 只要拿到歌手信息 OR 歌曲列表，就认为成功
+        if (singerData || songs.length > 0) {
+            // 如果只有歌曲没有歌手信息（极少见），造一个默认的
+            if (!singerData && songs.length > 0) {
+                singerData = { name: name, pic: '' }; 
+            }
+            if (singerData) updateSingerInfo(singerData);
+            
+            updateStats(stats || {});
+            
+            // 直接渲染列表（不获取收藏量，只显示基础信息）
+            renderSongs(songs, {});
         } else {
             songListEl.innerHTML = '<div class="loading">未找到相关数据</div>';
         }
