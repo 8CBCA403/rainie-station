@@ -129,7 +129,7 @@ body::before {
 /* 横向主卡 */
 .card {
   position: relative;
-  width: 96%;
+  width: 88%;
   height: 72%;
   display: flex;
   
@@ -222,6 +222,7 @@ body::before {
      filter: blur(4px);
    }
 }
+
 
 /* 移除旧的 property 定义，避免冲突 */
 /* @property --hole-radius ... */
@@ -331,6 +332,46 @@ body::before {
 }
 .note .txt {
   flex: 1 1 auto;
+}
+
+/* Music Archive Button */
+.action-bar {
+  margin-top: 30px;
+  display: flex;
+  justify-content: flex-start;
+}
+.music-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 182, 193, 0.3);
+  border-radius: 50px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+.music-btn:hover {
+  background: rgba(255, 105, 180, 0.15);
+  border-color: rgba(255, 105, 180, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 105, 180, 0.2);
+}
+.music-btn:active {
+  transform: translateY(0);
+}
+.music-btn .icon {
+  font-size: 1.1rem;
+  color: #ffb6c1;
+}
+.music-btn .text {
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
 }
 
 /* 右：时间显示 */
@@ -617,5 +658,3 @@ body::before {
 html {
   -webkit-text-size-adjust: 100%;
 }
-
-

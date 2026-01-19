@@ -138,6 +138,11 @@
     width: 100%;
     transform: translateX(-10px); /* 整体左移一点 */
   }
+
+  /* Music Archive Button Mobile Adjustments */
+  .action-bar {
+    display: none;
+  }
   .note {
     font-size: 0.75rem; /* 字体再小一点 */
     line-height: 1.5;
