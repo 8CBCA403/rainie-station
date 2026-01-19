@@ -20,7 +20,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     searchSinger("杨丞琳");
+    
+    // Event listeners for Lyrics Modal
+    document.getElementById('close-lyrics').addEventListener('click', () => {
+        document.getElementById('lyrics-modal').style.display = 'none';
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('lyrics-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'lyrics-modal') {
+            document.getElementById('lyrics-modal').style.display = 'none';
+        }
+    });
+
+    // Event listener for Back to Hot Songs
+    document.getElementById('back-to-hot-btn').addEventListener('click', () => {
+        if (originalHotSongs.length > 0) {
+            renderSongs(originalHotSongs, {});
+            document.getElementById('song-list-title').textContent = '热门歌曲';
+            document.getElementById('back-to-hot-btn').style.display = 'none';
+        }
+    });
 });
+
+let originalHotSongs = [];
 
 async function searchSinger(name) {
     const songListEl = document.getElementById('song-list');
@@ -94,6 +117,9 @@ async function searchSinger(name) {
 
         // 只要拿到歌手信息 OR 歌曲列表，就认为成功
         if (singerData || songs.length > 0) {
+            // 保存原始热门歌曲列表
+            originalHotSongs = songs;
+            
             // 如果只有歌曲没有歌手信息（极少见），造一个默认的
             if (!singerData && songs.length > 0) {
                 singerData = { name: name, pic: '' }; 
@@ -220,6 +246,8 @@ function processAndRenderAlbums(songs) {
         // 格式化时间
         let pubTime = formatPubTime(album.time_public);
 
+        div.onclick = () => fetchAlbumSongs(album.mid, album.name);
+
         div.innerHTML = `
             <div class="album-cover" style="background-image: url('${picUrl}')"></div>
             <div class="album-info">
@@ -229,6 +257,29 @@ function processAndRenderAlbums(songs) {
         `;
         albumListEl.appendChild(div);
     });
+}
+
+async function fetchAlbumSongs(mid, albumName) {
+    const songListEl = document.getElementById('song-list');
+    songListEl.innerHTML = '<div class="loading">正在加载专辑歌曲...</div>';
+    
+    // Show back button
+    document.getElementById('song-list-title').textContent = `专辑: ${albumName}`;
+    document.getElementById('back-to-hot-btn').style.display = 'block';
+
+    try {
+        const response = await fetch(`/api/album_songs?mid=${mid}`);
+        const result = await response.json();
+        
+        if (result.code === 0 && result.data && result.data.list) {
+            renderSongs(result.data.list, {});
+        } else {
+            songListEl.innerHTML = '<div class="loading">暂无歌曲数据</div>';
+        }
+    } catch (e) {
+        console.error(e);
+        songListEl.innerHTML = '<div class="loading">加载失败</div>';
+    }
 }
 
 // 辅助函数：统一解析时间用于排序
@@ -300,6 +351,13 @@ function renderSongs(songs, statsMap) {
             }
         }
 
+        // 获取 songmid
+        const songmid = song.songmid || song.mid;
+        const singerName = (song.singer && song.singer.length > 0) ? song.singer[0].name : "杨丞琳";
+
+        // Add click event for lyrics
+        div.onclick = () => fetchLyrics(songmid, songName, singerName);
+
         div.innerHTML = `
             <div class="song-main">
                 <div class="song-title ${index < 3 ? 'active' : ''}">${index + 1}. ${escapeHtml(songName)}</div>
@@ -314,6 +372,66 @@ function renderSongs(songs, statsMap) {
         `;
         songListEl.appendChild(div);
     });
+}
+
+async function fetchLyrics(mid, songName, singerName) {
+    const modal = document.getElementById('lyrics-modal');
+    const titleEl = document.getElementById('lyrics-title');
+    const metaEl = document.getElementById('lyrics-meta');
+    const contentEl = document.getElementById('lyrics-content');
+    
+    // Show modal with loading state
+    modal.style.display = 'flex';
+    titleEl.textContent = songName;
+    metaEl.innerHTML = '';
+    contentEl.textContent = '正在加载歌词...';
+    
+    try {
+        const response = await fetch(`/api/lyrics?mid=${mid}`);
+        const data = await response.json();
+        
+        if (data.lyric) {
+            // Parse lyrics
+            const rawLyric = data.lyric;
+            const lines = rawLyric.split('\n');
+            let lyricText = '';
+            let composer = '';
+            let lyricist = '';
+            
+            // Regex for parsing metadata
+            const tiReg = /\[ti:(.*?)\]/;
+            const arReg = /\[ar:(.*?)\]/;
+            const alReg = /\[al:(.*?)\]/;
+            
+            // Regex for timestamp
+            const timeReg = /\[\d{2}:\d{2}\.\d{2,3}\]/g;
+            
+            lines.forEach(line => {
+                // Check for metadata lines (often in the first few lines without timestamp or with 00:00)
+                if (line.includes('词：')) lyricist = line.replace(/.*词：/, '').replace(/\]/, '').trim();
+                if (line.includes('曲：')) composer = line.replace(/.*曲：/, '').replace(/\]/, '').trim();
+                
+                // Clean lyrics
+                let cleanLine = line.replace(timeReg, '').replace(tiReg, '').replace(arReg, '').replace(alReg, '').trim();
+                if (cleanLine) {
+                    lyricText += cleanLine + '\n';
+                }
+            });
+            
+            // Build meta info
+            let metaHtml = '';
+            if (lyricist) metaHtml += `作词：${lyricist} `;
+            if (composer) metaHtml += `作曲：${composer}`;
+            
+            metaEl.innerHTML = metaHtml || `${singerName}`;
+            contentEl.textContent = lyricText || '暂无歌词文本';
+        } else {
+            contentEl.textContent = '未找到歌词';
+        }
+    } catch (e) {
+        console.error(e);
+        contentEl.textContent = '歌词加载失败';
+    }
 }
 
 function formatNumber(num) {

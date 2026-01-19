@@ -101,6 +101,72 @@ def song_stats():
     # 直接返回空数据，不再处理 Cookie 或请求 QQ 音乐
     return jsonify({"code": 0, "song_stats": {"data": {"list": []}}})
 
+# API: 获取歌词
+@app.get("/api/lyrics")
+def get_lyrics():
+    songmid = request.args.get("mid")
+    if not songmid:
+        return jsonify({"error": "Missing songmid"}), 400
+        
+    url = "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg"
+    params = {
+        "songmid": songmid,
+        "format": "json",
+        "nobase64": 1,
+        "g_tk": 5381
+    }
+    
+    query_string = urllib.parse.urlencode(params)
+    full_url = f"{url}?{query_string}"
+    
+    headers = {
+        "Referer": "https://y.qq.com/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
+    try:
+        req = urllib.request.Request(full_url, headers=headers)
+        with urllib.request.urlopen(req) as response:
+            content = response.read().decode('utf-8')
+            # QQ Music lyrics API sometimes returns JSONP-ish or loose JSON
+            # But with format=json, it should be clean JSON.
+            # However, sometimes it wraps in callback. Let's check.
+            # Based on previous test, it returned clean JSON: {"retcode":0,...}
+            data = json.loads(content)
+            return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# API: 获取专辑详情（含歌曲列表）
+@app.get("/api/album_songs")
+def get_album_songs():
+    albummid = request.args.get("mid")
+    if not albummid:
+        return jsonify({"error": "Missing albummid"}), 400
+        
+    url = "https://c.y.qq.com/v8/fcg-bin/fcg_v8_album_info_cp.fcg"
+    params = {
+        "albummid": albummid,
+        "format": "json",
+        "newsong": 1
+    }
+    
+    query_string = urllib.parse.urlencode(params)
+    full_url = f"{url}?{query_string}"
+    
+    headers = {
+        "Referer": "https://y.qq.com/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
+    try:
+        req = urllib.request.Request(full_url, headers=headers)
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # API: 获取未来所有巡演
 @app.get("/api/upcoming-tours")
 def get_upcoming_tours():

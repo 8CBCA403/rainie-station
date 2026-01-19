@@ -445,8 +445,11 @@
                 <!-- 左侧：热门歌曲 -->
                 <div class="list-section left-list">
                     <div class="section-header">
-                        <div class="sec-title">热门歌曲</div>
-                        <div class="sec-sub">TOP SONGS</div>
+                        <div class="sec-title" id="song-list-title">热门歌曲</div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                             <button id="back-to-hot-btn" style="display: none; background: none; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">返回热门</button>
+                             <div class="sec-sub">TOP SONGS</div>
+                        </div>
                     </div>
                     <div id="song-list" class="list-container">
                         <div class="loading">正在加载数据...</div>
@@ -474,6 +477,24 @@
           <div class="tag">The Elephant We See</div>
         </div>
       </div>
+    </div>
+
+    <!-- 歌词弹窗 -->
+    <div id="lyrics-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(10px);">
+        <div style="background: rgba(255,255,255,0.1); width: 90%; max-width: 500px; height: 80%; border-radius: 12px; padding: 30px; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="font-size: 1.2rem; font-weight: bold; color: #fff;" id="lyrics-title">歌曲名</div>
+                <button id="close-lyrics" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            
+            <div id="lyrics-meta" style="font-size: 0.9rem; color: #20bf64; margin-bottom: 15px; line-height: 1.6;">
+                <!-- 词曲信息 -->
+            </div>
+            
+            <div id="lyrics-content" style="flex: 1; overflow-y: auto; color: rgba(255,255,255,0.8); line-height: 1.8; white-space: pre-wrap; text-align: center; font-size: 1rem; padding-right: 10px;">
+                正在加载歌词...
+            </div>
+        </div>
     </div>
 
     <script src="/static/js/stats.js"></script>
