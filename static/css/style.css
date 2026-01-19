@@ -99,7 +99,7 @@ body::before {
 #bg-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(12, 12, 20, 0.35);
+  background: rgba(12, 12, 20, 0.15);
   backdrop-filter: none;
   z-index: 1;
 }
