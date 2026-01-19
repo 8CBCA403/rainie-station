@@ -43,6 +43,8 @@ async function searchSinger(name) {
         // 仅处理 QQ Music 官方结构
         if (result.code === 0 && result.data && (result.data.zhida || result.data.song)) {
             const d = result.data;
+            
+            // 1. 优先从 zhida 获取歌手统计信息
             if (d.zhida && d.zhida.zhida_singer) {
                 const z = d.zhida.zhida_singer;
                 singerData = {
@@ -54,18 +56,24 @@ async function searchSinger(name) {
                     album_num: z.albumNum,
                     mv_num: z.mvNum
                 };
-                songs = z.hotsong || [];
-            } else if (d.song && d.song.list) {
+            }
+
+            // 2. 优先从 song.list 获取歌曲列表 (因为包含 pubtime 等详细字段)
+            if (d.song && d.song.list && d.song.list.length > 0) {
                 songs = d.song.list;
-                if (songs.length > 0 && songs[0].singer) {
+                // 如果之前没拿到歌手信息 (zhida不存在), 尝试从歌曲列表提取
+                if (!singerData && songs[0].singer && songs[0].singer.length > 0) {
                     singerData = {
                         name: songs[0].singer[0].name,
                         pic: `https://y.gtimg.cn/music/photo_new/T001R150x150M000${songs[0].singer[0].mid}.jpg`
                     };
+                    stats = {
+                        song_num: d.song.totalnum
+                    };
                 }
-                stats = {
-                    song_num: d.song.totalnum
-                };
+            } else if (d.zhida && d.zhida.zhida_singer) {
+                // 如果 song.list 空但 zhida 有歌 (备用)
+                songs = d.zhida.zhida_singer.hotsong || [];
             }
         }
 
@@ -122,7 +130,13 @@ function renderSongs(songs, statsMap) {
         const songName = song.songname || song.name || song.songName;
         const albumName = song.albumname || song.album?.name || song.albumName || '';
         // 使用真实的发布时间，如果没有则显示横杠
-        const pubTime = song.time_public || song.pub_time || (song.album ? song.album.time_public : '-') || '-';
+        let pubTime = song.time_public || song.pub_time || (song.album ? song.album.time_public : '-') || '-';
+
+        // 3. 时间格式化：支持时间戳转换
+        if (/^\d+$/.test(pubTime)) {
+            const date = new Date(parseInt(pubTime) * 1000);
+            pubTime = date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0') + '-' + date.getDate().toString().padStart(2, '0');
+        }
 
         div.innerHTML = `
             <div class="song-main">
