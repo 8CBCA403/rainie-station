@@ -9,6 +9,17 @@ def update_tours():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
+    # 确保表存在
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS tours (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        city TEXT NOT NULL,
+        tour_date TEXT NOT NULL,
+        venue TEXT,
+        status TEXT DEFAULT 'scheduled'
+    )
+    """)
+    
     # 清空旧数据
     print("Clearing old tours...")
     cursor.execute("DELETE FROM tours")
