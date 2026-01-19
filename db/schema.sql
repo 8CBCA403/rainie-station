@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS tours (
 DELETE FROM tours;
 
 INSERT INTO tours (city, tour_date, venue) VALUES 
-('Xi''an', '2026-02-07T19:00:00', 'Xi''an Olympic Sports Center'),
-('Suzhou', '2026-03-07T19:00:00', 'Suzhou Olympic Sports Centre'),
-('Quanzhou', '2026-03-14T19:30:00', 'Jinjiang Second Sports Center'),
-('Chengdu', '2026-03-28T19:00:00', 'Phoenix Hill Sports Park');
+('西安', '2026-02-07T19:00:00', '西安奥体中心体育馆'),
+('苏州', '2026-03-07T19:00:00', '苏州奥林匹克体育中心体育馆'),
+('泉州', '2026-03-14T19:30:00', '晋江市第二体育中心体育馆'),
+('成都', '2026-03-28T19:00:00', '凤凰山体育公园综合体育馆');
