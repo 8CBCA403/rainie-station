@@ -35,7 +35,8 @@ function renderTourSlider() {
       
       const station = document.createElement("div");
       station.className = "station-name";
-      station.innerText = `${tour.city}站`;
+      // 后台返回的 city 已经是 "西安" 等中文，所以不需要再拼接 "站" 字
+      station.innerText = `${tour.city}`; 
       
       const countdown = document.createElement("div");
       countdown.className = "countdown";
@@ -97,7 +98,9 @@ function updateAllCountdowns() {
       if (days > 0) {
         // 大于一天显示天数
         // "19 DAYS LEFT" -> "还有 19 天"
-        el.innerText = `还有 ${days} 天`; 
+      // 用户要求倒计时用英文： "19 DAYS LEFT"
+      const dayLabel = days === 1 ? "DAY" : "DAYS";
+      el.innerText = `${days} ${dayLabel} LEFT`; 
       } else {
         // 小于一天显示时分秒倒计时
         el.innerText = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
