@@ -804,17 +804,18 @@ html {
   .notes {
     text-align: left; 
     align-items: flex-start;
-    margin-top: 20px; /* 减小间距 */
-    gap: 12px; /* 减小间距 */
+    margin-top: 20px;
+    gap: 12px;
     padding: 0 10px;
     width: 100%;
+    transform: translateX(-10px); /* 整体左移一点 */
   }
   .note {
-    font-size: 0.8rem; /* 变小 */
+    font-size: 0.75rem; /* 字体再小一点 */
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.95);
     display: flex;
-    align-items: center; /* 改为 center 对齐 */
+    align-items: center;
     white-space: nowrap;
   }
   .note .star {
