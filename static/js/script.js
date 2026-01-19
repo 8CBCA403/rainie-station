@@ -204,10 +204,14 @@ if (mainCard) {
   // 移动端 Touch 交互：随手指移动圆心
   let isTouching = false;
   
+  // 初始化变量，避免未定义
+  mainCard.style.setProperty('--touch-x', '50%');
+  mainCard.style.setProperty('--touch-y', '20%');
+  mainCard.style.setProperty('--hole-radius', '0px');
+
   mainCard.addEventListener('touchstart', (e) => {
       if (window.innerWidth <= 520) {
           isTouching = true;
-          mainCard.style.setProperty('--hole-radius', '75px');
           
           // 立即更新位置，防止跳变
           const touch = e.touches[0];
@@ -219,6 +223,7 @@ if (mainCard) {
           if (y <= limitY) {
             mainCard.style.setProperty('--touch-x', `${x}px`);
             mainCard.style.setProperty('--touch-y', `${y}px`);
+            mainCard.style.setProperty('--hole-radius', '75px');
           }
       }
   }, { passive: true });
@@ -249,11 +254,8 @@ if (mainCard) {
           mainCard.style.setProperty('--touch-y', `${y}px`);
           mainCard.style.setProperty('--hole-radius', '75px'); // 保持显示
       } else {
-          // 滑到下半屏：
-          // 方案A：洞消失
+          // 滑到下半屏：洞立即消失
           mainCard.style.setProperty('--hole-radius', '0px');
-          
-          // 方案B：洞停留在边界（当前方案已废弃，改为消失以免干扰）
       }
     }
   }, { passive: true });

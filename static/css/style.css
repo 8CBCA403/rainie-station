@@ -688,31 +688,33 @@ html {
     transition: none;
     transform: none;
     
-    /* 重新定义尺寸：更加细长 */
-    width: 85% !important;
+    /* 重新定义尺寸：更宽，接近全屏以缓解文字局促 */
+    width: 96% !important;
     height: auto !important;
     min-height: 80vh;
-    margin: 40px auto;
+    margin: 15px auto; 
     
     /* 
        核心：恢复 Mask，但是逻辑变了
        现在是一个随触摸移动的圆形“透明洞”
+       默认不显示洞，只有触摸时才有
+       使用 var(--hole-opacity, 0) 来控制透明度，避免黑边问题
     */
     -webkit-mask-image: radial-gradient(
-      circle at var(--touch-x) var(--touch-y),
+      circle at var(--touch-x, 50%) var(--touch-y, 50%),
       transparent 0,
-      transparent var(--hole-radius),
-      black calc(var(--hole-radius) + 20px)
+      transparent var(--hole-radius, 0px),
+      black calc(var(--hole-radius, 0px) + 20px)
     );
     mask-image: radial-gradient(
-      circle at var(--touch-x) var(--touch-y),
+      circle at var(--touch-x, 50%) var(--touch-y, 50%),
       transparent 0,
-      transparent var(--hole-radius),
-      black calc(var(--hole-radius) + 20px)
+      transparent var(--hole-radius, 0px),
+      black calc(var(--hole-radius, 0px) + 20px)
     );
     
     /* 触摸时平滑过渡 */
-    transition: --touch-x 0.1s linear, --touch-y 0.1s linear;
+    transition: --touch-x 0.05s linear, --touch-y 0.05s linear, --hole-radius 0.2s ease-out;
   }
   
   /* 禁用 hover 推拉效果 */
@@ -749,7 +751,8 @@ html {
   /* 5. 内容布局调整：上下垂直排列 */
   .content {
     flex-direction: column;
-    padding: 60px 24px 40px; 
+    /* 减小左右内边距，给文字更多空间 */
+    padding: 60px 12px 40px; 
     gap: 30px;
     width: 100%;
     height: 100%;
@@ -786,7 +789,8 @@ html {
     margin-bottom: 8px;
     line-height: 1.2;
     /* 强制换行逻辑：如果想和图一样“房间里的”和“大象”分两行，需要HTML结构配合，或者依靠宽度挤压 */
-    /* 图中是：房间里的（第一行）大象（第二行），这里我们可以尝试用 padding 挤压或者直接改 html */
+    /* 图中是：房间里的（第一行）大象（第二行），这里我们可以尝试用换行逻辑：如果想 挤压或者直接改 html里的”和“大象”分两行，需要HTML结构配合，或者依靠宽度挤压 */
+    /* 图中是：房间里的20第一行）大象（第二行），这里我们可以尝试用 padding 挤压或者直接改 html */
     padding: 0 20px; 
   }
   
