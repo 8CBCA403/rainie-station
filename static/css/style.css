@@ -688,11 +688,11 @@ html {
     transition: none;
     transform: none;
     
-    /* 重新定义尺寸：更宽，接近全屏以缓解文字局促 */
-    width: 96% !important;
+    /* 重新定义尺寸：激进变宽，变短 */
+    width: 98% !important; 
     height: auto !important;
-    min-height: 80vh;
-    margin: 15px auto; 
+    min-height: 60vh; /* 缩短卡片高度 */
+    margin: 10px auto; 
     
     /* 
        核心：恢复 Mask，但是逻辑变了
