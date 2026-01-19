@@ -168,26 +168,8 @@ body::before {
   z-index: 0;
   pointer-events: none; 
   
-  /* 核心：挖洞 Mask - 居中定位，无需计算偏移 */
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%; 
-  mask-size: 100% 100%;
-  -webkit-mask-composite: source-over;
-  mask-composite: add;
-
-  -webkit-mask-image: radial-gradient(
-    circle at center,
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
-  mask-image: radial-gradient(
-    circle at center,
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
+  /* 添加透明度过渡动画，用于消失效果 */
+  transition: opacity 0.6s ease-out;
 }
 
 /* 移除不再需要的 ::after */
@@ -195,20 +177,18 @@ body::before {
   display: none;
 }
 
-/* 移除多余的 after 定义 */
-/* .card::after 已在上方设置为 display: none */
-
 /* Hover 时分裂，恢复内侧边框 */
 @media (pointer: fine) {
   /* 关键修复：定义 hover 时变量的变化，否则背景不会动 */
   .card:hover {
     width: 96%; /* 卡片变宽，模拟推开效果 */
-    --hole-radius: 380px;
+    /* --hole-radius: 380px;  不再需要挖洞变量 */
   }
 
-  /* 移除不再需要的伪元素变换 */
-  /* .card:hover::before ... */
-  /* .card:hover::after ... */
+  /* 鼠标悬停时，背景直接消失 */
+  .card:hover::before {
+    opacity: 0;
+  }
   
   /* ... */
   
