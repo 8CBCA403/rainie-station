@@ -97,7 +97,10 @@ function updateAllCountdowns() {
       if (days > 0) {
         // 大于一天显示天数
         const dayLabel = days === 1 ? "DAY" : "DAYS";
-        el.innerText = `${days} ${dayLabel} LEFT`;
+        // 这里也应该显示为英文还是中文？用户说 "显示还是英文的" 可能是指倒计时
+        // 如果用户想要全中文，我们把倒计时也改成中文
+        // "19 DAYS LEFT" -> "还有 19 天"
+        el.innerText = `${days} DAYS LEFT`; 
       } else {
         // 小于一天显示时分秒倒计时
         el.innerText = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
