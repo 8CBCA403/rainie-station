@@ -29,7 +29,14 @@ def update_tours():
         ('Xi\'an', '2026-02-07T19:00:00', 'Xi\'an Olympic Sports Center'),
         ('Suzhou', '2026-03-07T19:00:00', 'Suzhou Olympic Sports Centre'),
         ('Quanzhou', '2026-03-14T19:30:00', 'Jinjiang Second Sports Center'),
-        ('Chengdu', '2026-03-28T19:00:00', 'Phoenix Hill Sports Park')
+        ('Chengdu', '2026-03-28T19:00:00', 'Phoenix Hill Sports Park'),
+        ('Shenzhen', '2026-04-05T19:00:00', 'Shenzhen Universiade Sports Centre'),
+        ('Hefei', '2026-04-18T19:00:00', 'Hefei Sports Center Stadium'),
+        ('Foshan', '2026-05-02T19:00:00', 'Foshan Century Lotus Sports Center'),
+        ('Ningbo', '2026-05-16T19:00:00', 'Ningbo Olympic Sports Center'),
+        ('Jinan', '2026-05-30T19:00:00', 'Jinan Olympic Sports Center'),
+        ('Guiyang', '2026-06-13T19:00:00', 'Guiyang Olympic Sports Center'),
+        ('Nanchang', '2026-06-27T19:00:00', 'Nanchang International Sports Center')
     ]
     
     print("Inserting new tours...")
