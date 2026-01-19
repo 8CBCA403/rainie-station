@@ -272,6 +272,16 @@ async function fetchAlbumSongs(mid, albumName) {
         const result = await response.json();
         
         if (result.code === 0 && result.data && result.data.list) {
+            // Inject album date if missing in songs (common in album detail API)
+            const albumDate = result.data.aDate || result.data.pub_time || '';
+            if (albumDate) {
+                result.data.list.forEach(song => {
+                    // Inject into a property that renderSongs looks for
+                    if (!song.time_public && !song.pubtime && !song.pub_time) {
+                        song.time_public = albumDate;
+                    }
+                });
+            }
             renderSongs(result.data.list, {});
         } else {
             songListEl.innerHTML = '<div class="loading">暂无歌曲数据</div>';
