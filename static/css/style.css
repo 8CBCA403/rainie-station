@@ -179,20 +179,19 @@ body::before {
   border-right: none; 
   
   /* 
-     计算 Mask 位置：
-     原始坐标: var(--cursor-x)
-     补偿偏移: + var(--split-offset) (因为元素往左跑了，洞要往右补)
-     
-     mask-position 的坐标原点是元素的左上角
+     Mask 位置固定在中心（视觉上的屏幕中央）
+     因为元素本身向左移了 var(--split-offset)
+     所以 Mask 必须向右补回 var(--split-offset) 才能保持不动
+     基准点是 100% (即左半边的右边缘，也就是卡片中心)
   */
   -webkit-mask-image: radial-gradient(
-    circle at calc(var(--cursor-x) + var(--split-offset)) var(--cursor-y),
+    circle at calc(100% + var(--split-offset)) 50%,
     transparent 0,
     transparent var(--hole-radius),
     black calc(var(--hole-radius) + 30px)
   );
   mask-image: radial-gradient(
-    circle at calc(var(--cursor-x) + var(--split-offset)) var(--cursor-y),
+    circle at calc(100% + var(--split-offset)) 50%,
     transparent 0,
     transparent var(--hole-radius),
     black calc(var(--hole-radius) + 30px)
@@ -206,19 +205,17 @@ body::before {
   border-left: none; 
   
   /* 
-     计算 Mask 位置：
-     原始坐标: var(--cursor-x)
-     相对右半边的坐标: var(--cursor-x) - (var(--card-w) / 2)
-     补偿偏移: - var(--split-offset) (因为元素往右跑了，洞要往左补)
+     基准点是 0% (即右半边的左边缘，也就是卡片中心)
+     元素向右移了 var(--split-offset)，Mask 向左补回
   */
   -webkit-mask-image: radial-gradient(
-    circle at calc(var(--cursor-x) - (var(--card-w) / 2) - var(--split-offset)) var(--cursor-y),
+    circle at calc(0% - var(--split-offset)) 50%,
     transparent 0,
     transparent var(--hole-radius),
     black calc(var(--hole-radius) + 30px)
   );
   mask-image: radial-gradient(
-    circle at calc(var(--cursor-x) - (var(--card-w) / 2) - var(--split-offset)) var(--cursor-y),
+    circle at calc(0% - var(--split-offset)) 50%,
     transparent 0,
     transparent var(--hole-radius),
     black calc(var(--hole-radius) + 30px)
@@ -228,7 +225,8 @@ body::before {
 /* Hover 时分裂 */
 @media (pointer: fine) {
   .card:hover {
-    --split-offset: 60px; /* 触发变量动画 */
+    --split-offset: 140px; /* 加大推开距离 */
+    --hole-radius: 380px;  /* 鼠标放上去直接变大，固定圆心 */
   }
 
   .card:hover::before {
@@ -238,19 +236,19 @@ body::before {
     transform: translateX(var(--split-offset));
   }
   
-  /* 内容也跟着动一点点 */
+  /* 内容也跟着动 */
   .card:hover .content .left {
-    transform: translateX(-30px);
+    transform: translateX(-50px);
   }
   .card:hover .content .right {
-    transform: translateX(30px);
+    transform: translateX(50px);
   }
   
   .card:hover .roomno {
-    transform: translateX(30px);
+    transform: translateX(50px);
   }
   .card:hover .brand-rail {
-    transform: translateX(30px);
+    transform: translateX(50px);
   }
 }
 

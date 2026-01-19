@@ -198,41 +198,16 @@ if (slider) {
 const mainCard = document.querySelector('.card');
 
 if (mainCard) {
-  // 恢复挖洞效果的 JS 逻辑
-  // 我们需要把鼠标坐标(px)传给 CSS，因为现在卡片分裂了，用百分比处理坐标会很麻烦
+  // 移动端 Touch 监听（保留移动端的交互，或者也可以考虑统一去掉）
+  // 既然用户要求“固定圆心”，可能移动端也不需要拖来拖去了。
+  // 但为了保留一点趣味性，移动端可以暂时保留“点击显示洞”的效果，位置也可以固定。
   
-  const updateCursor = (x, y) => {
-    const rect = mainCard.getBoundingClientRect();
-    const relX = x - rect.left;
-    const relY = y - rect.top;
-    
-    // 传入绝对像素坐标和卡片总宽
-    mainCard.style.setProperty('--cursor-x', `${relX}px`);
-    mainCard.style.setProperty('--cursor-y', `${relY}px`);
-    mainCard.style.setProperty('--card-w', `${rect.width}px`);
-  };
-
-  // 桌面端 Hover 监听
-  mainCard.addEventListener('mousemove', (e) => {
-    updateCursor(e.clientX, e.clientY);
-  });
-
-  // 进出时控制半径开关 (配合 CSS transition)
-  mainCard.addEventListener('mouseenter', () => {
-    mainCard.style.setProperty('--hole-radius', '380px');
-  });
+  // 简化：移动端点击时，也在中心显示洞
+  // 如果需要完全移除 JS 交互，CSS 里的 :hover 在移动端体验不佳（需要点击触发）
+  // 这里暂时保留一个简单的 Touch 触发器，只控制 radius
   
-  mainCard.addEventListener('mouseleave', () => {
-    mainCard.style.setProperty('--hole-radius', '0px');
-  });
-
-  // 移动端 Touch 监听
-  mainCard.addEventListener('touchmove', (e) => {
-    if (e.touches[0]) {
-      updateCursor(e.touches[0].clientX, e.touches[0].clientY);
-      // 移动端保持开启
-      mainCard.style.setProperty('--hole-radius', '80px'); 
-    }
+  mainCard.addEventListener('touchstart', () => {
+    mainCard.style.setProperty('--hole-radius', '80px');
   }, { passive: true });
   
   mainCard.addEventListener('touchend', () => {
