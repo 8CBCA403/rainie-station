@@ -167,9 +167,12 @@ body::before {
   /* 核心：挖洞 Mask */
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  /* 确保 Mask 尺寸覆盖足够大 */
-  -webkit-mask-size: 200% 200%; 
-  mask-size: 200% 200%;
+  /* 
+     修复：必须设为 100% 100%，否则 calc() 计算的坐标会基于错误的尺寸
+     之前设为 200% 导致定位偏移
+  */
+  -webkit-mask-size: 100% 100%; 
+  mask-size: 100% 100%;
 }
 
 /* 左半边 */
