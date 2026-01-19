@@ -69,6 +69,54 @@ def search_singer():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# API: 获取歌曲详细统计信息 (收藏量)
+@app.get("/api/song_stats")
+def song_stats():
+    songmids = request.args.get("songmids")
+    if not songmids:
+        return jsonify({"error": "songmids is required"}), 400
+
+    mid_list = songmids.split(",")
+    
+    url = "https://u.y.qq.com/cgi-bin/musicu.fcg"
+    
+    # 构造请求
+    payload = {
+        "comm": {
+            "cv": 4747474,
+            "ct": 24,
+            "format": "json",
+            "inCharset": "utf-8",
+            "outCharset": "utf-8",
+            "notice": 0,
+            "platform": "yqq.json",
+            "needNewCode": 1
+        },
+        "song_stats": {
+             "module": "music.social_interaction_svr.SocialInteraction",
+             "method": "GetSongCollectCount",
+             "param": {
+                 "song_mid_list": mid_list
+             }
+        }
+    }
+    
+    data = json.dumps(payload).encode('utf-8')
+    
+    headers = {
+        "Referer": "https://y.qq.com/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    
+    try:
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+        with urllib.request.urlopen(req) as response:
+            resp_data = json.loads(response.read().decode('utf-8'))
+            return jsonify(resp_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # API: 获取未来所有巡演
 @app.get("/api/upcoming-tours")
 def get_upcoming_tours():
