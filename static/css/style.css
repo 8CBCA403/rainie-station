@@ -817,6 +817,7 @@ html {
     display: flex;
     align-items: center;
     white-space: nowrap;
+    gap: 0; /* 显式设置为0 */
   }
   .note .star {
       margin-right: 8px;
