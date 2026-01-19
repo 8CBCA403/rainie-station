@@ -27,14 +27,24 @@ async function searchSinger(name) {
     
     // Reset / Loading State
     songListEl.innerHTML = '<div class="loading">正在获取数据...</div>';
-    document.getElementById('total-songs').textContent = '-';
-    document.getElementById('total-albums').textContent = '-';
-    document.getElementById('total-mvs').textContent = '-';
+    
+    // 安全地重置元素内容
+    const resetEl = (id) => { const el = document.getElementById(id); if(el) el.textContent = '-'; };
+    resetEl('total-songs');
+    resetEl('total-albums');
+    resetEl('total-mvs');
     // document.getElementById('total-collects').textContent = '-';
 
     try {
+        console.log(`Fetching data for: ${name}`); // Debug Log
         const response = await fetch(`/api/search_singer?name=${encodeURIComponent(name)}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
+        console.log('API Result:', result); // Debug Log
         
         let singerData = null;
         let songs = [];
