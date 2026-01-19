@@ -1,0 +1,621 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: #000a1a; 
+  font-family: "PingFang SC", "Helvetica Neue", sans-serif;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* 移除旧的 property 定义，避免冲突 */
+/* @property --hole-radius ... */
+
+@property --hole-x {
+  syntax: '<length-percentage>';
+  inherits: false;
+  initial-value: 50%;
+}
+
+@property --hole-y {
+  syntax: '<length-percentage>';
+  inherits: false;
+  initial-value: 50%;
+}
+
+/* 移除 body::before 的细网格，如果想保留可以调整 z-index */
+body::before {
+  display: none;
+}
+
+/* 动态背景轮播容器 */
+#bg-slider {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* 最底层 */
+}
+
+/* 单个背景图（默认全屏铺满） */
+.bg-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 20%;
+  opacity: 0;
+  animation: slideShow 24s infinite;
+}
+
+.bg-slide:nth-child(1) {
+  background-image: url('../img/bg1.jpg');
+  animation-delay: 0s;
+}
+
+.bg-slide:nth-child(2) {
+  background-image: url('../img/bg2.jpg');
+  animation-delay: 4s;
+}
+
+.bg-slide:nth-child(3) {
+  background-image: url('../img/bg3.jpg');
+  animation-delay: 8s;
+}
+
+.bg-slide:nth-child(4) {
+  background-image: url('../img/bg4.jpg');
+  animation-delay: 12s;
+}
+
+.bg-slide:nth-child(5) {
+  background-image: url('../img/bg5.jpg');
+  animation-delay: 16s;
+}
+
+.bg-slide:nth-child(6) {
+  background-image: url('../img/bg6.jpg');
+  animation-delay: 20s;
+}
+
+/* 轮播动画：淡入淡出 */
+@keyframes slideShow {
+  0%   { opacity: 0; transform: scale(1.03); }
+  5%   { opacity: 1; transform: scale(1); }
+  20%  { opacity: 1; transform: scale(1); }
+  25%  { opacity: 0; transform: scale(1.02); }
+  100% { opacity: 0; transform: scale(1.02); }
+}
+
+/* 全局深色遮罩：确保文字清晰 */
+#bg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 12, 20, 0.15);
+  backdrop-filter: none;
+  z-index: 1;
+}
+
+/* 主舞台 */
+.stage {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px;
+}
+
+/* 定义动画变量，让 CSS 能平滑过渡偏移量 */
+@property --split-offset {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --hole-radius {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+/* 横向主卡 */
+.card {
+  position: relative;
+  width: 88%;
+  height: 72%;
+  display: flex;
+  
+  /* 默认变量值 */
+  --split-offset: 0px;
+  --hole-radius: 0px;
+  --cursor-x: 50%; /* 兜底 */
+  --cursor-y: 50%;
+  --card-w: 1000px; /* 兜底 */
+  
+  /* 让变量支持过渡动画，同时增加宽度的过渡 */
+  transition: --split-offset 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              --hole-radius 0.4s ease-out,
+              width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 
+   单一背景层：解决拼接缝隙问题，实现完美圆形挖洞 
+   现在不再使用左右两个伪元素，而是只用 ::before 做背景
+*/
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0; /* 铺满整个卡片 */
+  width: 100%;
+  height: 100%;
+  
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  
+  /* 统一边框和圆角 */
+  border: 1px solid rgba(255, 105, 180, 0.2);
+  border-radius: 60px;
+  
+  z-index: 0;
+  pointer-events: none; 
+  
+  /* 添加透明度过渡动画，用于消失效果 */
+  transition: opacity 0.6s ease-out;
+}
+
+/* 移除不再需要的 ::after */
+.card::after {
+  display: none;
+}
+
+/* Hover 时分裂，恢复内侧边框 */
+@media (pointer: fine) {
+  /* 关键修复：定义 hover 时变量的变化，否则背景不会动 */
+  .card:hover {
+    width: 96%; /* 卡片变宽，模拟推开效果 */
+    /* --hole-radius: 380px;  不再需要挖洞变量 */
+  }
+
+  /* 鼠标悬停时，背景直接消失 */
+  .card:hover::before {
+    opacity: 0;
+  }
+  
+  /* ... */
+  
+   /* 
+      关键修改：内容移动距离要比背景大，让它们往两边“多退一点”
+      背景推开 0px (纯挖洞)，内容现在推开 140px
+   */
+   .card:hover .content .left {
+     transform: translateX(-140px);
+   }
+   .card:hover .content .right {
+     transform: translateX(140px);
+   }
+   
+   .card:hover .roomno {
+    transform: translateX(140px);
+    opacity: 0; /* 悬停时消失 */
+  }
+   .card:hover .brand-rail {
+     /* 推出去的同时，直接淡出消失 */
+     transform: translateX(140px);
+     opacity: 0;
+     transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease-out 0.2s;
+   }
+   
+   /* 小象图标动画：分裂时缓缓隐藏 */
+   .card:hover .elephant-wrap {
+     opacity: 0;
+     transform: scale(0.95);
+     /* 增加一点模糊效果，模拟“消失”的感觉 */
+     filter: blur(4px);
+   }
+}
+
+/* 移除旧的 property 定义，避免冲突 */
+/* @property --hole-radius ... */
+
+/* ✅ 用 1.png 替代线条大象 SVG：居中、半透明、水印感 */
+.elephant-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* 在内容下面 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  /* 增加 transition 以支持 hover 时的平滑过渡 */
+  transition: opacity 0.8s ease, transform 0.8s ease, filter 0.8s ease;
+}
+.elephant-wrap img {
+  width: clamp(420px, 38vw, 720px);
+  height: auto;
+  opacity: 0.18; /* 水印强度：不抢戏 */
+  filter: drop-shadow(0 0 18px rgba(255, 182, 193, 0.35))
+    drop-shadow(0 0 60px rgba(255, 255, 255, 0.08));
+  transform: translateY(20px);
+  /* 想要一点点“呼吸感”就取消下一行注释 */
+  /* animation: float 6s ease-in-out infinite; */
+  /* 优化移动端性能：开启硬件加速 */
+  will-change: transform, opacity;
+  transform: translateZ(0) translateY(20px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .count-num {
+    animation: none;
+  }
+}
+
+/* 内容层 */
+.content {
+  position: relative;
+  z-index: 2; /* ✅ 保证在大象之上 */
+  flex: 1;
+  display: flex;
+  gap: 60px;
+  padding: 70px 80px 70px 80px;
+}
+
+/* 为了动画效果，需要 transition */
+.content .left,
+.content .right,
+.roomno,
+.brand-rail {
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity 0.6s ease-out; /* 增加透明度过渡 */
+}
+
+/* 左：宣言/注释 */
+.left {
+  flex: 1.1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 22px;
+}
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.station {
+  font-size: 0.9rem;
+  letter-spacing: 4px;
+  color: #ff69b4;
+}
+.title {
+  font-size: 2.2rem;
+  font-weight: 200;
+  letter-spacing: 10px;
+  color: #ffb6c1;
+}
+.sub {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 3px;
+}
+
+/* 星标注释列表 */
+.notes {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 720px;
+}
+.note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1rem;
+}
+.note .star {
+  width: 18px;
+  color: rgba(255, 182, 193, 0.9);
+  transform: translateY(1px);
+  flex: 0 0 auto;
+}
+.note .txt {
+  flex: 1 1 auto;
+}
+
+/* 右：时间显示 */
+.right {
+  flex: 0.9;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  text-align: right;
+  /* 确保有足够宽度 */
+  min-width: 0; 
+}
+#clock.clock {
+  margin-top: 6px;
+  font-family: "Courier New", monospace;
+  font-size: 1.7rem;
+  letter-spacing: 6px;
+  color: #ff69b4;
+  line-height: 1.1;
+}
+
+/* 巡演信息样式 */
+.tour-info {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  animation: fadeIn 1s ease-out;
+  width: 100%;
+  overflow: visible;
+  padding-right: 0;
+  position: relative;
+}
+
+/* 导航箭头样式 */
+.nav-btn {
+  /* ...保持基本样式不变... */
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ffb6c1;
+  font-size: 1rem; 
+  cursor: pointer;
+  z-index: 10;
+  user-select: none;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+  animation: pulse 2s infinite; 
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2); 
+  border-radius: 50%;
+}
+.nav-btn:hover {
+  background: rgba(255, 105, 180, 0.2);
+  opacity: 1;
+}
+
+/* 关键定位调整 */
+.nav-btn.prev {
+  /* 左箭头：放到内容区域的左侧 */
+  left: 0; 
+  right: auto;
+}
+
+.nav-btn.next {
+  /* 右箭头：放到内容区域的右侧 */
+  right: 0;
+  left: auto;
+}
+
+/* 给容器加 padding，为箭头腾出空间 */
+.slider-container {
+  position: relative;
+  /* 关键修改：适应内容宽度，让左箭头紧贴文字 */
+  width: fit-content;
+  max-width: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; 
+  
+  /* 增加左右内边距，确保箭头在容器内且不遮挡文字 */
+  padding-left: 30px;
+  padding-right: 30px;
+}
+.nav-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; transform: translateY(-50%) scale(1); }
+  50% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+  100% { opacity: 0.4; transform: translateY(-50%) scale(1); }
+}
+
+/* 手机端适配调整 */
+@media (max-width: 1100px) {
+  .nav-btn {
+    display: none; /* 手机端可以直接滑动，隐藏箭头更清爽 */
+  }
+  
+  /* 手机端移除左右 padding，因为没有箭头了 */
+  .slider-container {
+      padding-left: 0;
+      padding-right: 0;
+  }
+}
+
+.divider {
+  width: 60px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  margin-bottom: 20px;
+}
+.next-label {
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 10px;
+}
+
+/* 滑动容器 */
+.tour-slider {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  gap: 20px;
+  width: 100%;
+  padding-bottom: 10px; /* 给滚动条留点空间（虽然隐藏了） */
+  scrollbar-width: none; /* Firefox */
+}
+.tour-slider::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* 单个巡演卡片 */
+.tour-card {
+  flex: 0 0 100%; /* 每次显示一个 */
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* 右对齐内容 */
+  min-width: 0; /* 防止 flex item 溢出 */
+}
+
+.station-name {
+  font-size: 1.5rem;
+  color: #fff;
+  letter-spacing: 4px;
+  margin-bottom: 5px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+}
+.countdown {
+  font-family: "Courier New", monospace;
+  font-size: 1.2rem;
+  color: #ffb6c1;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+.venue-name {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+  letter-spacing: 1px;
+  /* 允许换行，配合容器限宽 */
+  white-space: normal;
+  text-align: right;
+  line-height: 1.4;
+}
+
+/* "And More" 卡片特殊样式 */
+.more-card .station-name {
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+.more-card .countdown {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+
+/* 右上角：房间号 */
+.roomno {
+  position: absolute;
+  top: 28px;
+  right: 92px; /* 给竖条让位 */
+  z-index: 3;
+  font-size: 0.95rem;
+  letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.roomno b {
+  color: #ffb6c1;
+  font-weight: 400;
+}
+
+/* 右侧竖排品牌栏 */
+.brand-rail {
+  width: 72px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.brand-rail .vtext {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 2px;
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+.brand-rail .tag {
+  position: absolute;
+  bottom: 24px;
+
+  right: calc(100% + 12px);
+  transform: none;
+
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+}
+
+.date {
+  margin-top: 26px; /* 把原来 #clock 的 margin-top 挪到这里 */
+  font-family: "Courier New", monospace;
+  font-size: 1.8rem; /* 略大 */
+  letter-spacing: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.1;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 小屏兜底 */
+@media (max-width: 1100px) {
+  .card {
+    /* 激进调整：更宽、更短 */
+    width: 98% !important;
+    height: auto !important;
+    min-height: 60vh; /* 大幅缩短高度 */
+    margin: 10px auto;
+    padding-bottom: 20px;
+  }
+
+  .content {
+    flex-direction: column;
+    gap: 30px;
+  }
+  .right {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .tour-info {
+    align-items: flex-start;
+    margin-top: 30px;
+  }
+  .tour-card {
+    align-items: flex-start; /* 小屏改为左对齐 */
+  }
+  .count {
+    font-size: 10rem;
+  }
+  .brand-rail {
+    display: none;
+  }
+  .roomno {
+    right: 32px;
+  }
+}
+/* 微信/移动端：防止自动放大字体导致错位 */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+
