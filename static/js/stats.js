@@ -146,14 +146,27 @@ function processAndRenderAlbums(songs) {
     // 提取专辑信息并去重
     const albumMap = new Map();
     songs.forEach(song => {
-        if (song.album && song.album.mid) {
-            if (!albumMap.has(song.album.mid)) {
-                albumMap.set(song.album.mid, {
-                    mid: song.album.mid,
-                    name: song.album.name,
-                    // 尝试从歌曲时间获取大概的发布时间，因为 song.album 里通常没有详细时间
-                    // 或者如果 song.album 有 time_public 更好
-                    time_public: song.album.time_public || song.time_public || song.pubtime || ''
+        // 兼容不同的数据结构：
+        // 1. song.album.mid (嵌套结构)
+        // 2. song.albummid (扁平结构)
+        const mid = song.album?.mid || song.albummid || song.albumMid;
+        const name = song.album?.name || song.albumname || song.albumName;
+        
+        // 确保有 mid 和 name，且不是空的
+        if (mid && name) {
+            if (!albumMap.has(mid)) {
+                // 尝试获取发布时间
+                // 优先顺序: album.time_public -> song.time_public -> song.pubtime -> album.pub_time
+                let time = '';
+                if (song.album && song.album.time_public) time = song.album.time_public;
+                else if (song.time_public) time = song.time_public;
+                else if (song.pubtime) time = song.pubtime;
+                else if (song.pub_time) time = song.pub_time;
+                
+                albumMap.set(mid, {
+                    mid: mid,
+                    name: name,
+                    time_public: time
                 });
             }
         }
