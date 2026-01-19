@@ -179,15 +179,10 @@ body::before {
 .card::before {
   left: 0;
   border-radius: 60px 0 0 60px;
-  border-right: none; 
+  /* 初始无右边框 */
+  border-right: 0px solid transparent; 
   
-  /* 
-     修复：Mask 应该相对于元素自身定位。
-     左半边卡片向左移了 var(--split-offset)
-     它的右边缘（原本是中心）现在也向左移了。
-     要让洞保持在视觉中心，Mask 中心应该在：
-     100% (当前右边缘) + var(--split-offset) (补回移动距离)
-  */
+  /* Mask 保持不变 */
   -webkit-mask-image: radial-gradient(
     circle at calc(100% + var(--split-offset)) 50%,
     transparent 0,
@@ -206,60 +201,52 @@ body::before {
 .card::after {
   right: 0;
   border-radius: 0 60px 60px 0;
-  border-left: none; 
+  /* 初始无左边框 */
+  border-left: 0px solid transparent;
   
-  /* 
-     同理，右半边向右移了 var(--split-offset)
-     它的左边缘（原本是中心）向右移了。
-     要让洞保持在视觉中心，Mask 中心应该在：
-     0% (当前左边缘) - var(--split-offset) (补回移动距离)
-  */
+  /* Mask 保持不变 */
   -webkit-mask-image: radial-gradient(
     circle at calc(0% - var(--split-offset)) 50%,
     transparent 0,
     transparent var(--hole-radius),
     black calc(var(--hole-radius) + 30px)
   );
-  mask-image: radial-gradient(
-    circle at calc(0% - var(--split-offset)) 50%,
-    transparent 0,
-    transparent var(--hole-radius),
-    black calc(var(--hole-radius) + 30px)
-  );
+  mask-image::radial-gradient(before {
+    circle at calc(0% - var(transform: tra))s5t%,
+    transearent 0,
+  cctransparentpvar(--hole-radius),t-offset) * -1));
+    black calc(var(/* 分裂后，让内侧边框显) +出来增加精)
+  )致
 }
-
-/* Hover 时分裂 */
-@media (pointer: fine) {
-  .card:hover {
-    --split-offset: 140px; /* 卡片背景推开距离 */
-    --hole-radius: 380px;
-  }
-
-  .card:hover::before {
-    transform: translateX(calc(var(--split-offset) * -1));
-  }
+感 */
+/* Hover 时分裂，恢复内侧边框 */ border-right: 1px solid rgba(255, 105, 180, 0.2);
+@media (pointer: fine) {  }
   .card:hover::after {
     transform: translateX(var(--split-offset));
+    /* 分裂后，让内侧边框显现出来 */
+    border-left: 1px solid rgba(255, 105, 180, 0.2);
   }
   
-  /* 
-     关键修改：内容移动距离要跟背景一致，或者略小一点点但不能差太多
-     之前背景推开 140px，内容才动 50px，导致看起来“背景跑了，字还在原地”
-     现在让内容也动 120px，略微有一点视差，但基本同步
-  */
-  .card:hover .content .left {
-    transform: translateX(-120px);
-  }
-  .card:hover .content .right {
-    transform: translateX(120px);
-  }
+  /* ... */
   
-  .card:hover .roomno {
-    transform: translateX(120px);
-  }
-  .card:hover .brand-rail {
-    transform: translateX(120px);
-  }
+   /* 
+      关键修改：内容移动距离要跟背景一致，或者略小一点点但不能差太多
+      之前背景推开 140px，内容才动 50px，导致看起来“背景跑了，字还在原地”
+      现在让内容也动 120px，略微有一点视差，但基本同步
+   */
+   .card:hover .content .left {
+     transform: translateX(-120px);
+   }
+   .card:hover .content .right {
+     transform: translateX(120px);
+   }
+   
+   .card:hover .roomno {
+     transform: translateX(120px);
+   }
+   .card:hover .brand-rail {
+     transform: translateX(120px);
+   }
 }
 
 /* 移除旧的 property 定义，避免冲突 */
