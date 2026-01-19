@@ -7,6 +7,8 @@ import urllib.request
 import urllib.parse
 import json
 
+import re
+
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "db" / "room64.db"
 SCHEMA_PATH = BASE_DIR / "db" / "schema.sql"
@@ -27,6 +29,28 @@ def init_db():
         con.executescript(f.read())
     con.close()
     print(f"Database schema initialized at {DB_PATH}")
+
+# 辅助函数：计算 g_tk
+def get_g_tk(cookie_str):
+    # 尝试提取 qm_keyst (首选) 或 p_skey 或 skey
+    key = ""
+    if "qm_keyst=" in cookie_str:
+        match = re.search(r'qm_keyst=([^; ]+)', cookie_str)
+        if match: key = match.group(1)
+    elif "p_skey=" in cookie_str:
+        match = re.search(r'p_skey=([^; ]+)', cookie_str)
+        if match: key = match.group(1)
+    elif "skey=" in cookie_str:
+        match = re.search(r'skey=([^; ]+)', cookie_str)
+        if match: key = match.group(1)
+        
+    if not key:
+        return 5381
+        
+    h = 5381
+    for c in key:
+        h += (h << 5) + ord(c)
+    return h & 0x7fffffff
 
 # 主页 - 直接返回静态页面
 @app.get("/")
@@ -80,6 +104,21 @@ def song_stats():
     
     url = "https://u.y.qq.com/cgi-bin/musicu.fcg"
     
+    # 尝试从环境变量或本地文件读取 Cookie
+    cookie_str = os.environ.get("QQ_COOKIE", "")
+    if not cookie_str and (BASE_DIR / ".cookie").exists():
+        with open(BASE_DIR / ".cookie", "r", encoding="utf-8") as f:
+            cookie_str = f.read().strip()
+
+    # 计算 g_tk 和提取 uin
+    g_tk = get_g_tk(cookie_str)
+    
+    uin = 0
+    # 尝试提取 uin (例如 o123456 -> 123456)
+    uin_match = re.search(r'uin=[o0]?(\d+)', cookie_str)
+    if uin_match:
+        uin = int(uin_match.group(1))
+    
     # 构造请求
     payload = {
         "comm": {
@@ -90,7 +129,9 @@ def song_stats():
             "outCharset": "utf-8",
             "notice": 0,
             "platform": "yqq.json",
-            "needNewCode": 1
+            "needNewCode": 1,
+            "uin": uin,
+            "g_tk": g_tk
         },
         "song_stats": {
              "module": "music.social_interaction_svr.SocialInteraction",
@@ -103,22 +144,18 @@ def song_stats():
     
     data = json.dumps(payload).encode('utf-8')
     
-    # 尝试从环境变量或本地文件读取 Cookie
-    # 你需要在项目根目录创建一个 .cookie 文件，或者设置环境变量 QQ_COOKIE
-    cookie_str = os.environ.get("QQ_COOKIE", "")
-    if not cookie_str and (BASE_DIR / ".cookie").exists():
-        with open(BASE_DIR / ".cookie", "r", encoding="utf-8") as f:
-            cookie_str = f.read().strip()
-
     headers = {
         "Referer": "https://y.qq.com/",
+        "Origin": "https://y.qq.com",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Content-Type": "application/x-www-form-urlencoded",
-        "Cookie": cookie_str  # 带上 Cookie
+        "Cookie": cookie_str
     }
     
     try:
-        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+        # URL 中也建议带上 g_tk
+        full_url = f"{url}?g_tk={g_tk}"
+        req = urllib.request.Request(full_url, data=data, headers=headers, method="POST")
         with urllib.request.urlopen(req) as response:
             resp_data = json.loads(response.read().decode('utf-8'))
             return jsonify(resp_data)
