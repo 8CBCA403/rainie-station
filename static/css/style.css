@@ -689,10 +689,10 @@ html {
     transform: none;
     
     /* 重新定义尺寸：激进变宽，变短 */
-    width: 98% !important; 
+    width: 110% !important; 
     height: auto !important;
-    min-height: 60vh; /* 缩短卡片高度 */
-    margin: 10px auto; 
+    min-height: 50vh; /* 缩短卡片高度 */
+    margin: 10px -5%; 
     
     /* 
        核心：恢复 Mask，但是逻辑变了
@@ -784,7 +784,7 @@ html {
 
   /* 调整标题字号，还原图片排版 */
   .title {
-    font-size: 2.6rem; 
+    font-size: 1.8rem; 
     letter-spacing: 4px;
     margin-bottom: 8px;
     line-height: 1.2;
@@ -810,11 +810,12 @@ html {
     width: 100%;
   }
   .note {
-    font-size: 0.95rem; 
+    font-size: 0.7rem; 
     line-height: 1.6;
     color: rgba(255, 255, 255, 0.9);
     display: flex;
     align-items: flex-start;
+    white-space: nowrap;
   }
   .note .star {
       margin-right: 8px;
@@ -842,7 +843,7 @@ html {
     letter-spacing: 4px;
   }
   #clock.clock {
-    font-size: 1.6rem; 
+    font-size: 1.2rem; 
     color: #ff69b4;
     letter-spacing: 4px;
     margin-bottom: 25px;
@@ -880,7 +881,7 @@ html {
   }
   
   .station-name {
-      font-size: 2.0rem;
+      font-size: 1.5rem;
       font-weight: bold;
       color: rgba(255, 255, 255, 0.95);
       margin-bottom: 8px;
