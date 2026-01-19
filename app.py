@@ -103,10 +103,18 @@ def song_stats():
     
     data = json.dumps(payload).encode('utf-8')
     
+    # 尝试从环境变量或本地文件读取 Cookie
+    # 你需要在项目根目录创建一个 .cookie 文件，或者设置环境变量 QQ_COOKIE
+    cookie_str = os.environ.get("QQ_COOKIE", "")
+    if not cookie_str and (BASE_DIR / ".cookie").exists():
+        with open(BASE_DIR / ".cookie", "r", encoding="utf-8") as f:
+            cookie_str = f.read().strip()
+
     headers = {
         "Referer": "https://y.qq.com/",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Cookie": cookie_str  # 带上 Cookie
     }
     
     try:
