@@ -155,6 +155,9 @@ def song_stats():
         "Cookie": cookie_str
     }
     
+    # 特别处理：如果 Cookie 中没有 qm_keyst，尝试添加一个假的或者报错提示
+    # 但根据你的截图，Cookie 是有的
+    
     try:
         # URL 中也建议带上 g_tk
         full_url = f"{url}?g_tk={g_tk}"
@@ -166,7 +169,8 @@ def song_stats():
             return jsonify(resp_data)
     except Exception as e:
         print(f"Error fetching stats: {e}")
-        return jsonify({"error": str(e)}), 500
+        # 如果出错，返回空数据结构，避免前端报错
+        return jsonify({"code": -1, "song_stats": {"data": {"list": []}}})
 
 # API: 获取未来所有巡演
 @app.get("/api/upcoming-tours")
