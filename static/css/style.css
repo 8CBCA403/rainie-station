@@ -670,135 +670,106 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-/* 手机竖屏：重排为上下结构 */
+/* 手机竖屏：完全独立的 UI 逻辑 */
 @media (max-width: 520px) and (orientation: portrait) {
-  .bg-slide {
-    background-position: center 10%;
+  /* 
+     彻底重写卡片结构：
+     不再是左右分裂，而是上下两块背景板，或者直接一张完整的卡片
+     用户要求：中间不要有缝，且圆心不要固定死（或者是想表达圆心动画的逻辑变了）
+  */
+  
+  /* 1. 隐藏原来的左右伪元素（那个导致中间有缝的根源） */
+  .card::before,
+  .card::after {
+    display: none !important;
   }
-  /* 大象水印：缩小并上移一点，避免挡文字 */
+  
+  /* 2. 给主卡片加一个统一的背景 */
+  .card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 105, 180, 0.2);
+    border-radius: 28px;
+    
+    /* 移除所有推拉相关的变量和过渡 */
+    transition: none;
+    transform: none;
+    
+    /* 重新定义尺寸 */
+    width: 92% !important;
+    height: auto !important;
+    min-height: 75vh;
+    margin: 20px auto;
+    
+    /* 修复圆心问题：手机端不需要那个挖洞 mask 了 */
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+  
+  /* 3. 禁用 hover 推拉效果 */
+  .card:hover {
+    --split-offset: 0px !important;
+  }
+  .card:hover .content .left,
+  .card:hover .content .right,
+  .card:hover .roomno,
+  .card:hover .brand-rail {
+    transform: none !important;
+  }
+  
+  /* 4. 小象水印位置调整 */
+  .elephant-wrap {
+    /* 手机端放在卡片底部或者中间作为背景纹理 */
+    z-index: 0;
+    opacity: 0.1;
+  }
   .elephant-wrap img {
-    width: min(78vw, 360px);
-    opacity: 0.14;
-    /* 移动端特殊优化 */
-    transform: translateZ(0) translateY(36px);
+    width: 80%;
+    transform: none !important;
   }
 
-  /* 修复：移除之前错误的媒体查询覆盖，确保样式正确应用 */
-  /* 竖屏就别左右分栏了：改成上下 */
+  /* 5. 内容布局调整：上下垂直排列 */
   .content {
     flex-direction: column;
-    gap: 18px;
-    /* 修复：增加顶部 padding，给右上角绝对定位的房间号留出空间，防止重叠 */
-    padding: 60px 18px 40px 18px;
-    /* 修复：确保内容区域占满宽度 */
+    padding: 40px 24px;
+    gap: 30px;
     width: 100%;
-    
-    /* 整体缩放 75%，解决屏幕放不下的问题 */
-    zoom: 0.75; 
+    height: 100%;
+    zoom: 1; /* 移除 zoom，避免布局计算混乱 */
   }
 
-  /* 左侧文案区域：收紧字号与间距 */
-  .station {
-    font-size: 0.75rem;
-    letter-spacing: 3px;
-  }
-  .title {
-    font-size: 1.8rem; /* 调大标题字号 */
-    letter-spacing: 4px; /* 减小字间距防止换行 */
-    white-space: nowrap; /* 强制不换行 */
-  }
-  .sub {
-    font-size: 0.95rem;
-    letter-spacing: 2px;
-  }
-
-  .notes {
-    max-width: 100%;
-    gap: 8px;
-    /* 修复：确保文字左对齐且有足够空间 */
-    text-align: left;
-  }
-
-  /* 竖排酒店栏：手机竖屏直接隐藏（不然占空间） */
-  .brand-rail {
-    display: none;
-  }
-
-  /* 房间号别贴边：放左上角更像“卡片信息” */
-  .roomno {
-    top: 14px;
-    right: 14px;
-    font-size: 0.8rem;
-    letter-spacing: 2px;
-  }
-
-  /* 修复手机端文字显示不全的问题 */
-  .station-name {
-    font-size: 1.3rem; /* 稍微调小一点 */
-    white-space: normal; /* 允许换行，防止撑开 */
-    text-align: center;
-  }
-  .countdown {
-    font-size: 1.1rem;
-    white-space: nowrap; /* 倒计时不换行 */
-  }
-  .venue-name {
-    font-size: 0.75rem;
-    white-space: normal; /* 允许换行 */
-    text-align: center;
-    max-width: 100%;
-  }
-  
-  /* 调整滑块容器的高度适应 */
-  .tour-slider {
-    padding-bottom: 20px; /* 增加底部padding，确保最后一行不贴边 */
-    
-    /* 恢复 flex 布局，支持横向滚动 */
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    justify-content: flex-start; /* 左对齐，保证能往右滑 */
-    width: 100%;
-  }
-  
-  /* 确保卡片内容居中且不溢出 */
-  .tour-card {
-    /* 关键：必须设置 flex-shrink: 0，否则会被挤压成一坨 */
-    flex: 0 0 100%; 
-    scroll-snap-align: center; /* 滑动对齐居中 */
-    
+  /* 左侧（顶部）信息 */
+  .left {
     align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 20px 10px; /* 增加上下内边距 */
-    margin-bottom: 20px; /* 增加底部间距 */
+    text-align: center;
+    flex: 0 0 auto;
   }
-
-  /* 右侧时间区域：居中放在下半部分 */
+  .meta {
+    align-items: center;
+  }
+  .notes {
+    text-align: center;
+    align-items: center;
+  }
+  
+  /* 右侧（底部）信息 */
   .right {
     align-items: center;
     text-align: center;
-    margin-top: 20px; /* 增加与上方内容的间距 */
-    width: 100%;
+    flex: 1;
+    justify-content: flex-start;
+    margin-top: 0;
   }
   
-  .tour-info {
-    align-items: center;
-    margin-top: 30px; /* 增加与时间的间距 */
-    width: 100%;
+  /* 房间号 */
+  .roomno {
+    top: 20px;
+    right: 20px;
   }
-
-  .card {
-    /* 修复：增加宽度到 110% (因为有 zoom: 0.75，所以这里要设宽一点来抵消缩放带来的视觉变窄) */
-    width: 110%; 
-    height: auto; 
-    min-height: 85%; 
-    border-radius: 28px;
-    margin: 0 auto; 
-    
-    /* 增加内边距，让内容呼吸感更强 */
-    padding-left: 5%;
-    padding-right: 5%;
+  
+  /* 隐藏品牌侧边栏 */
+  .brand-rail {
+    display: none;
   }
 }
