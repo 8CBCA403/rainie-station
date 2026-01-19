@@ -71,7 +71,7 @@ def search_singer():
     params = {
         "w": name,
         "t": 0,
-        "n": 5,
+        "n": 30,  # 修改为 30 首
         "page": 1,
         "cr": 1,
         "catZhida": 1,
