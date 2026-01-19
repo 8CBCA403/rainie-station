@@ -107,37 +107,8 @@ async function fetchRealCollectCounts(songs) {
         return;
     }
 
-    // 先渲染列表（显示加载中）
+    // 直接渲染列表（不获取收藏量，只显示基础信息）
     renderSongs(songs, {});
-
-    // 批量获取收藏量
-    const mids = songs.map(s => s.songMID || s.songmid).filter(id => id).slice(0, 10);
-    try {
-        const statsRes = await fetch(`/api/song_stats?songmids=${mids.join(',')}`);
-        const statsData = await statsRes.json();
-        
-        let statsMap = {};
-        let totalCollects = 0;
-
-        if (statsData.code === 0 && statsData.song_stats && statsData.song_stats.data) {
-             const list = statsData.song_stats.data.song_visit_info || statsData.song_stats.data.list || [];
-             list.forEach(item => {
-                 const mid = item.song_mid || item.mid;
-                 const count = item.collect_count || 0;
-                 statsMap[mid] = count;
-                 totalCollects += count;
-             });
-             
-             // 更新总收藏量面板
-             document.getElementById('total-collects').innerHTML = 
-                `${formatNumber(totalCollects)}+ <div style="font-size:0.6rem;opacity:0.6">Top10 总收藏</div>`;
-
-             // 重新渲染带数据的列表
-             renderSongs(songs, statsMap);
-        }
-    } catch (e) {
-        console.warn("Failed to fetch collect stats", e);
-    }
 }
 
 function renderSongs(songs, statsMap) {
@@ -150,28 +121,18 @@ function renderSongs(songs, statsMap) {
         
         const songName = song.songname || song.name || song.songName;
         const albumName = song.albumname || song.album?.name || song.albumName || '';
-        const mid = song.songMID || song.songmid;
-        
-        // 收藏量
-        const collectCount = statsMap[mid] || 0;
-        // 模拟热度 (仅作为视觉展示)
-        const heat = Math.floor(collectCount / 200) + Math.floor(Math.random() * 50);
+        // 使用真实的发布时间，如果没有则显示横杠
+        const pubTime = song.time_public || song.pub_time || (song.album ? song.album.time_public : '-') || '-';
 
         div.innerHTML = `
             <div class="song-main">
                 <div class="song-title ${index < 3 ? 'active' : ''}">${index + 1}. ${escapeHtml(songName)}</div>
                 <div class="song-meta">${escapeHtml(albumName)}</div>
             </div>
-            <div class="song-stat">
-                <div class="stat-row" title="收藏量">
-                    <i>❤️</i>
-                    <span class="stat-num pink">${formatNumber(collectCount)}</span>
-                </div>
-            </div>
-            <div class="song-stat">
-                <div class="stat-row" title="模拟热度">
-                    <i>🔥</i>
-                    <span class="stat-num blue">${formatNumber(heat)}</span>
+            <div class="song-stat" style="min-width: 100px;">
+                <div class="stat-row" title="发布时间">
+                    <i>📅</i>
+                    <span class="stat-num pink" style="font-size: 0.9rem;">${escapeHtml(pubTime)}</span>
                 </div>
             </div>
         `;

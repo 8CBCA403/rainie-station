@@ -94,83 +94,12 @@ def search_singer():
         return jsonify({"error": str(e)}), 500
 
 # API: 获取歌曲详细统计信息 (收藏量)
+# 注意：由于风控原因，目前仅保留接口定义，实际上不进行敏感数据请求
+# 前端已改为不调用此接口，或仅用作占位
 @app.get("/api/song_stats")
 def song_stats():
-    songmids = request.args.get("songmids")
-    if not songmids:
-        return jsonify({"error": "songmids is required"}), 400
-
-    mid_list = songmids.split(",")
-    
-    url = "https://u.y.qq.com/cgi-bin/musicu.fcg"
-    
-    # 尝试从环境变量或本地文件读取 Cookie
-    cookie_str = os.environ.get("QQ_COOKIE", "")
-    if not cookie_str and (BASE_DIR / ".cookie").exists():
-        with open(BASE_DIR / ".cookie", "r", encoding="utf-8") as f:
-            cookie_str = f.read().strip()
-
-    # 计算 g_tk 和提取 uin
-    g_tk = get_g_tk(cookie_str)
-    
-    uin = 0
-    # 尝试提取 uin (例如 o123456 -> 123456)
-    uin_match = re.search(r'uin=[o0]?(\d+)', cookie_str)
-    if uin_match:
-        uin = int(uin_match.group(1))
-    
-    # 构造请求
-    payload = {
-        "comm": {
-            "cv": 4747474,
-            "ct": 24,
-            "format": "json",
-            "inCharset": "utf-8",
-            "outCharset": "utf-8",
-            "notice": 0,
-            "platform": "yqq.json",
-            "needNewCode": 1,
-            "uin": uin,
-            "g_tk": g_tk
-        },
-        "song_stats": {
-             "module": "music.social_interaction_svr.SocialInteraction",
-             "method": "GetSongCollectCount",
-             "param": {
-                 "song_mid_list": mid_list
-             }
-        }
-    }
-    
-    # 关键修改：QQ 音乐接口有时不接受 raw body，而是需要 data=JSON
-    # 我们尝试直接发送 raw string，但确保 Content-Type 是 text/plain 或留空
-    # 或者，某些环境（如 requests）会自动处理，这里我们用 urllib
-    data = json.dumps(payload, ensure_ascii=False).encode('utf-8')
-    
-    headers = {
-        "Referer": "https://y.qq.com/",
-        "Origin": "https://y.qq.com",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        # "Content-Type": "application/x-www-form-urlencoded", # 尝试移除这个，让它默认为 text/plain
-        "Cookie": cookie_str
-    }
-    
-    # 特别处理：如果 Cookie 中没有 qm_keyst，尝试添加一个假的或者报错提示
-    # 但根据你的截图，Cookie 是有的
-    
-    try:
-        # URL 中也建议带上 g_tk
-        full_url = f"{url}?g_tk={g_tk}"
-        req = urllib.request.Request(full_url, data=data, headers=headers, method="POST")
-        with urllib.request.urlopen(req) as response:
-            raw_resp = response.read().decode('utf-8')
-            # print(f"DEBUG: {raw_resp}") # 调试用
-            resp_data = json.loads(raw_resp)
-            return jsonify(resp_data)
-    except Exception as e:
-        print(f"Error fetching stats: {e}")
-        # 如果出错，返回空数据结构，避免前端报错
-        return jsonify({"code": -1, "song_stats": {"data": {"list": []}}})
+    # 直接返回空数据，不再处理 Cookie 或请求 QQ 音乐
+    return jsonify({"code": 0, "song_stats": {"data": {"list": []}}})
 
 # API: 获取未来所有巡演
 @app.get("/api/upcoming-tours")
