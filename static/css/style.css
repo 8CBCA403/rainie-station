@@ -672,20 +672,12 @@ html {
 
 /* 手机竖屏：完全独立的 UI 逻辑 */
 @media (max-width: 520px) and (orientation: portrait) {
-  /* 
-     彻底重写卡片结构：
-     不再是左右分裂，而是上下两块背景板，或者直接一张完整的卡片
-     用户要求：中间不要有缝，且圆心不要固定死（或者是想表达圆心动画的逻辑变了）
-  */
-  
-  /* 1. 隐藏原来的左右伪元素（那个导致中间有缝的根源） */
-  .card::before,
-  .card::after {
-    display: none !important;
-  }
-  
-  /* 2. 给主卡片加一个统一的背景 */
+  /* 定义 CSS 变量用于挖洞效果 */
   .card {
+    --touch-x: 50%;
+    --touch-y: 20%; /* 默认在上方 */
+    --hole-radius: 75px;
+    
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
@@ -696,18 +688,34 @@ html {
     transition: none;
     transform: none;
     
-    /* 重新定义尺寸 */
-    width: 92% !important;
+    /* 重新定义尺寸：更加细长 */
+    width: 85% !important;
     height: auto !important;
-    min-height: 75vh;
-    margin: 20px auto;
+    min-height: 80vh;
+    margin: 40px auto;
     
-    /* 修复圆心问题：手机端不需要那个挖洞 mask 了 */
-    mask-image: none !important;
-    -webkit-mask-image: none !important;
+    /* 
+       核心：恢复 Mask，但是逻辑变了
+       现在是一个随触摸移动的圆形“透明洞”
+    */
+    -webkit-mask-image: radial-gradient(
+      circle at var(--touch-x) var(--touch-y),
+      transparent 0,
+      transparent var(--hole-radius),
+      black calc(var(--hole-radius) + 20px)
+    );
+    mask-image: radial-gradient(
+      circle at var(--touch-x) var(--touch-y),
+      transparent 0,
+      transparent var(--hole-radius),
+      black calc(var(--hole-radius) + 20px)
+    );
+    
+    /* 触摸时平滑过渡 */
+    transition: --touch-x 0.1s linear, --touch-y 0.1s linear;
   }
   
-  /* 3. 禁用 hover 推拉效果 */
+  /* 禁用 hover 推拉效果 */
   .card:hover {
     --split-offset: 0px !important;
   }
@@ -717,10 +725,19 @@ html {
   .card:hover .brand-rail {
     transform: none !important;
   }
+
+  /* 小象图标：不再是背景纹理，而是真正被“掏出来”的底层内容 */
+  /* 但因为结构限制，小象在卡片内，被mask了就看不见了 */
+  /* 所以这里小象依然作为卡片内的水印存在，或者... */
+  /* 如果想要“透过洞看到小象”，那小象必须在卡片下面（body上） */
+  /* 鉴于当前 HTML 结构，小象在 .card 里面。
+     如果 mask 把卡片挖空了，那就直接透出 body 背景（轮播图）了。
+     所以“掏洞”效果就是：透过磨砂玻璃看到清晰的背景图。
+  */
   
-  /* 4. 小象水印位置调整 */
   .elephant-wrap {
-    /* 手机端放在卡片底部或者中间作为背景纹理 */
+    /* 手机端隐藏小象，或者把它挪到洞的位置？ */
+    /* 既然是“掏洞”，那应该是为了看清背景。小象如果是水印，就留着吧 */
     z-index: 0;
     opacity: 0.1;
   }
@@ -729,14 +746,14 @@ html {
     transform: none !important;
   }
 
-  /* 5. 内容布局调整：上下垂直排列 */
+  /* 内容布局调整：上下垂直排列 */
   .content {
     flex-direction: column;
-    padding: 40px 24px;
+    padding: 60px 24px 40px; /* 顶部留多点空间给洞 */
     gap: 30px;
     width: 100%;
     height: 100%;
-    zoom: 1; /* 移除 zoom，避免布局计算混乱 */
+    zoom: 1; 
   }
 
   /* 左侧（顶部）信息 */
@@ -744,13 +761,33 @@ html {
     align-items: center;
     text-align: center;
     flex: 0 0 auto;
+    margin-top: 20px; /* 避开顶部的洞 */
   }
   .meta {
     align-items: center;
   }
+  /* 调整标题字号，看起来更像图里的比例 */
+  .title {
+    font-size: 2.4rem; 
+    letter-spacing: 6px;
+    margin-bottom: 5px;
+  }
+  .sub {
+    font-size: 1.1rem;
+    letter-spacing: 3px;
+    opacity: 0.8;
+  }
+  
   .notes {
-    text-align: center;
-    align-items: center;
+    text-align: left; /* 还是左对齐好看点 */
+    align-items: flex-start;
+    margin-top: 20px;
+    gap: 15px;
+    padding: 0 10px;
+  }
+  .note {
+    font-size: 0.95rem;
+    line-height: 1.6;
   }
   
   /* 右侧（底部）信息 */
@@ -758,18 +795,36 @@ html {
     align-items: center;
     text-align: center;
     flex: 1;
-    justify-content: flex-start;
+    justify-content: flex-end; /* 沉底 */
+    margin-top: 20px;
+    padding-bottom: 20px;
+  }
+  
+  .date {
+    font-size: 1.4rem;
     margin-top: 0;
+    margin-bottom: 5px;
+  }
+  #clock.clock {
+    font-size: 1.6rem;
+    color: #ff69b4;
   }
   
   /* 房间号 */
   .roomno {
     top: 20px;
     right: 20px;
+    font-size: 0.8rem;
   }
   
   /* 隐藏品牌侧边栏 */
   .brand-rail {
     display: none;
+  }
+  
+  /* 修复伪元素 */
+  .card::before,
+  .card::after {
+    display: none !important;
   }
 }
