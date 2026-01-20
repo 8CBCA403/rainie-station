@@ -531,6 +531,14 @@ body::before {
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   white-space: nowrap;
 }
+.tour-date {
+  font-family: "Courier New", monospace;
+  font-size: 1rem;
+  color: rgba(255, 182, 193, 0.8);
+  letter-spacing: 2px;
+  margin-bottom: 5px;
+  text-shadow: 0 0 5px rgba(255, 105, 180, 0.2);
+}
 .countdown {
   font-family: "Courier New", monospace;
   font-size: 1.2rem;

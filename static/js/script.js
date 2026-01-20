@@ -38,6 +38,17 @@ function renderTourSlider() {
       // 后台返回的 city 已经是 "西安" 等中文
       station.innerText = `${tour.city}`; 
       
+      const dateEl = document.createElement("div");
+      dateEl.className = "tour-date";
+      // 格式化日期：2026-02-07T19:00:00 -> 2026.02.07
+      const dateObj = new Date(tour.date);
+      const dateStr = dateObj.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).replace(/\//g, '.');
+      dateEl.innerText = dateStr;
+
       const countdown = document.createElement("div");
       countdown.className = "countdown";
       countdown.id = `countdown-${index}`; // 给个ID方便更新
@@ -48,6 +59,7 @@ function renderTourSlider() {
       venue.innerText = tour.venue;
       
       card.appendChild(station);
+      card.appendChild(dateEl);
       card.appendChild(countdown);
       card.appendChild(venue);
       
