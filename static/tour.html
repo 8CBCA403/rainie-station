@@ -6,56 +6,428 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <title>杨丞琳『房间里的大象』 - Tour Archive</title>
+    <title>杨丞琳 - Tour Archive</title>
     <link rel="icon" type="image/png" href="/static/img/1.png" />
     <link rel="stylesheet" href="/static/css/desktop.css?v=7" />
     <style>
+      /* Override desktop.css constraints for a scrolling page */
+      html, body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto; /* Allow scrolling */
+        overflow-x: hidden;
+      }
+
       body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        display: block;
+        padding-bottom: 50px;
         background: #000a1a;
-        color: #fff;
-        height: 100vh;
-        overflow: hidden;
       }
-      .container {
+      
+      .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+
+      header {
         text-align: center;
+        margin-bottom: 60px;
+        animation: fadeInDown 1s ease-out;
       }
+
       h1 {
         font-size: 3rem;
-        color: #ffb6c1;
+        color: #FFD180;
         letter-spacing: 5px;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        text-shadow: 0 0 20px rgba(255, 149, 0, 0.3);
+      }
+
+      .subtitle {
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.6);
+        letter-spacing: 2px;
+        font-family: "Courier New", monospace;
+      }
+
+      /* Sections */
+      .section-title {
+        font-size: 1.8rem;
+        color: #fff;
+        border-left: 4px solid #FF9500;
+        padding-left: 15px;
+        margin: 50px 0 30px;
+        letter-spacing: 3px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      
+      .section-title span {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: normal;
+        letter-spacing: 1px;
+      }
+
+      /* Upcoming Cards */
+      .upcoming-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 30px;
+      }
+
+      .tour-card-item {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 149, 0, 0.2);
+        border-radius: 20px;
+        padding: 30px;
+        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+      }
+
+      .tour-card-item:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 149, 0, 0.5);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .tour-card-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #FF9500, #FFD180);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      
+      .tour-card-item:hover::before {
+        opacity: 1;
+      }
+
+      .card-tour-name {
+        font-size: 0.9rem;
+        color: #FF9500;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        font-weight: bold;
+      }
+
+      .card-city {
+        font-size: 2.2rem;
+        font-weight: 300;
+        margin-bottom: 5px;
+        color: #fff;
+      }
+
+      .card-venue {
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.6);
         margin-bottom: 20px;
       }
-      p {
-        font-size: 1.2rem;
-        color: rgba(255, 255, 255, 0.7);
-        letter-spacing: 2px;
+
+      .card-date {
+        font-family: "Courier New", monospace;
+        font-size: 1.1rem;
+        color: #FFD180;
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
-      .back-btn {
-        margin-top: 40px;
+
+      .status-badge {
         display: inline-block;
-        padding: 10px 30px;
-        border: 1px solid rgba(255, 182, 193, 0.5);
-        border-radius: 50px;
-        color: #fff;
-        text-decoration: none;
-        transition: all 0.3s ease;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        background: rgba(255, 149, 0, 0.2);
+        color: #FF9500;
+        margin-left: auto;
       }
-      .back-btn:hover {
-        background: rgba(255, 105, 180, 0.2);
-        border-color: #ff69b4;
+
+      /* Past Tours List */
+      .past-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .past-item {
+        display: grid;
+        grid-template-columns: 120px 1fr 1.5fr 1fr;
+        align-items: center;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 12px;
+        transition: background 0.2s;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .past-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .past-date {
+        font-family: "Courier New", monospace;
+        color: rgba(255, 255, 255, 0.5);
+      }
+      
+      .past-city {
+        font-size: 1.1rem;
+        font-weight: 500;
+      }
+
+      .past-venue {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      .past-tour-name {
+        text-align: right;
+        font-size: 0.85rem;
+        color: #FF9500;
+        opacity: 0.8;
+      }
+
+      /* Year Divider */
+      .year-divider {
+        margin: 40px 0 20px;
+        font-size: 4rem;
+        font-weight: bold;
+        color: rgba(255, 255, 255, 0.05);
+        position: relative;
+        line-height: 1;
+        user-select: none;
+      }
+
+      .year-divider::after {
+        content: '';
+        position: absolute;
+        bottom: 10px;
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
+      }
+
+      /* Back Button */
+      .back-fixed {
+        position: fixed;
+        top: 30px;
+        left: 30px;
+        z-index: 100;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: rgba(255, 255, 255, 0.6);
+        transition: color 0.3s;
+        background: rgba(0, 10, 26, 0.8);
+        padding: 8px 15px;
+        border-radius: 30px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .back-fixed:hover {
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Loading */
+      .loading {
+        text-align: center;
+        padding: 100px;
+        color: rgba(255, 255, 255, 0.3);
+        font-family: "Courier New", monospace;
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      @keyframes pulse {
+        0% { opacity: 0.3; }
+        50% { opacity: 0.7; }
+        100% { opacity: 0.3; }
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .past-item {
+          grid-template-columns: 1fr;
+          gap: 5px;
+          text-align: left;
+        }
+        .past-tour-name {
+          text-align: left;
+          order: -1;
+          margin-bottom: 5px;
+        }
+        .past-date {
+          order: 1;
+        }
+        .past-city {
+          order: 2;
+          font-size: 1.3rem;
+        }
+        .past-venue {
+          order: 3;
+        }
+        
+        .section-title {
+          font-size: 1.4rem;
+        }
+        
+        h1 {
+          font-size: 2rem;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>TOUR ARCHIVE</h1>
-      <p>The Elephant We See World Tour Achievements</p>
-      <p style="margin-top: 20px; font-size: 1rem; opacity: 0.5;">(Page Under Construction)</p>
-      
-      <a href="/" class="back-btn">Back to Station</a>
+    
+    <a href="/" class="back-fixed">← Back</a>
+
+    <div class="page-container">
+      <header>
+        <h1>Tour Archive</h1>
+        <div class="subtitle">Live Performance History</div>
+      </header>
+
+      <div id="content">
+        <div class="loading">LOADING DATA...</div>
+      </div>
     </div>
+
+    <script>
+      async function loadTours() {
+        const contentDiv = document.getElementById('content');
+        
+        try {
+          const res = await fetch('/api/upcoming-tours');
+          const data = await res.json();
+          
+          if (!data || data.length === 0) {
+            contentDiv.innerHTML = '<div class="loading">No records found.</div>';
+            return;
+          }
+
+          // Sort by date ascending for upcoming, descending for past
+          // The API returns everything sorted by date ASC.
+          
+          const now = new Date().toISOString();
+          const upcoming = data.filter(t => t.date >= now);
+          const past = data.filter(t => t.date < now).reverse(); // Past needs descending order
+
+          let html = '';
+
+          // 1. Upcoming Section
+          if (upcoming.length > 0) {
+            html += `
+              <div class="section-title">
+                Upcoming Shows <span>(${upcoming.length})</span>
+              </div>
+              <div class="upcoming-grid">
+            `;
+            
+            upcoming.forEach(tour => {
+              const dateObj = new Date(tour.date);
+              const dateStr = dateObj.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+              }).replace(/\//g, '.');
+              const timeStr = dateObj.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              });
+
+              html += `
+                <div class="tour-card-item">
+                  <div class="card-tour-name">${tour.tour_name || 'TBA'}</div>
+                  <div class="card-city">${tour.city || 'TBA'}</div>
+                  <div class="card-venue">${tour.venue || 'TBA'}</div>
+                  <div class="card-date">
+                    ${dateStr} ${timeStr}
+                    <span class="status-badge">${tour.status || 'Scheduled'}</span>
+                  </div>
+                </div>
+              `;
+            });
+            
+            html += `</div>`;
+          } else {
+            html += `
+              <div class="section-title">
+                Upcoming Shows
+              </div>
+              <p style="text-align:center; color:rgba(255,255,255,0.3); margin-bottom: 50px;">
+                No upcoming shows scheduled at the moment.
+              </p>
+            `;
+          }
+
+          // 2. Past Section
+          if (past.length > 0) {
+            html += `
+              <div class="section-title">
+                Past Events <span>(${past.length})</span>
+              </div>
+              <div class="past-list">
+            `;
+
+            let currentYear = '';
+
+            past.forEach(tour => {
+              const dateObj = new Date(tour.date);
+              const year = dateObj.getFullYear().toString();
+              const dateStr = dateObj.toLocaleDateString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit'
+              }).replace(/\//g, '.');
+
+              if (year !== currentYear) {
+                html += `<div class="year-divider">${year}</div>`;
+                currentYear = year;
+              }
+
+              html += `
+                <div class="past-item">
+                  <div class="past-date">${dateStr}</div>
+                  <div class="past-city">${tour.city || 'TBA'}</div>
+                  <div class="past-venue">${tour.venue || 'TBA'}</div>
+                  <div class="past-tour-name">${tour.tour_name || 'TBA'}</div>
+                </div>
+              `;
+            });
+
+            html += `</div>`;
+          }
+
+          contentDiv.innerHTML = html;
+
+        } catch (err) {
+          console.error(err);
+          contentDiv.innerHTML = '<div class="loading">Error loading data.</div>';
+        }
+      }
+
+      loadTours();
+    </script>
   </body>
 </html>

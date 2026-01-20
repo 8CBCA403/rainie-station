@@ -199,9 +199,11 @@ def get_upcoming_tours():
         
         return jsonify([
             {
+                "tour_name": tour["tour_name"],
                 "city": tour["city"],
                 "date": tour["tour_date"],
-                "venue": tour["venue"]
+                "venue": tour["venue"],
+                "status": tour["status"]
             } for tour in tours
         ])
     except sqlite3.OperationalError:

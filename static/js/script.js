@@ -6,8 +6,19 @@ async function fetchTours() {
     if (response.ok) {
       const data = await response.json();
       if (data && data.length > 0) {
-        upcomingTours = data;
-        renderTourSlider(); // 只有拿到数据才渲染
+        // Filter only upcoming tours
+        const now = new Date().toISOString();
+        upcomingTours = data.filter(t => t.date >= now);
+        
+        // If API returns sorted by date ASC, upcomingTours[0] is the next concert.
+        // If no upcoming tours, upcomingTours will be empty.
+        
+        if (upcomingTours.length > 0) {
+            renderTourSlider();
+        } else {
+            const tourInfoEl = document.getElementById("tour-info");
+            if (tourInfoEl) tourInfoEl.style.display = "none";
+        }
       } else {
         // 数据为空，可能要隐藏 slider
         const tourInfoEl = document.getElementById("tour-info");
