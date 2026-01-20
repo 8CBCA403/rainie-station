@@ -146,10 +146,26 @@ body::before {
               width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* 巡演档案入口按钮容器 */
+.action-bar-right {
+  position: absolute;
+  bottom: 70px;
+  right: 140px; /* 从 110px 增加到 140px，继续向左移动 */
+  width: auto;
+  margin-top: 0;
+  padding-right: 0;
+  z-index: 5;
+  /* 让它也能参与推拉动画 */
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 /* 
-   单一背景层：解决拼接缝隙问题，实现完美圆形挖洞 
-   现在不再使用左右两个伪元素，而是只用 ::before 做背景
+   复用 .music-btn 样式，但可能需要微调 
+   如果在 .action-bar-right 下，可以覆盖一些样式
 */
+.action-bar-right .music-btn {
+  /* 可以根据需要调整大小或颜色 */
+  padding: 8px 20px;
+}
 .card::before {
   content: '';
   position: absolute;
@@ -162,7 +178,7 @@ body::before {
   -webkit-backdrop-filter: blur(28px);
   
   /* 统一边框和圆角 */
-  border: 1px solid rgba(255, 105, 180, 0.2);
+  border: 1px solid rgba(255, 149, 0, 0.3); /* 橙色边框 */
   border-radius: 60px;
   
   z-index: 0;
@@ -199,7 +215,16 @@ body::before {
    .card.hover-active .content .left {
      transform: translateX(-140px);
    }
+   /* 左侧按钮也一起推开 */
+   .card.hover-active .action-bar {
+     transform: translateX(-140px);
+   }
+
    .card.hover-active .content .right {
+     transform: translateX(140px);
+   }
+   /* 右侧按钮也一起推开 */
+   .card.hover-active .action-bar-right {
      transform: translateX(140px);
    }
    
@@ -243,7 +268,7 @@ body::before {
   width: clamp(420px, 38vw, 720px);
   height: auto;
   opacity: 0.1; /* 水印强度：不抢戏 */
-  filter: drop-shadow(0 0 18px rgba(255, 182, 193, 0.35))
+  filter: drop-shadow(0 0 18px rgba(255, 149, 0, 0.35))
     drop-shadow(0 0 60px rgba(255, 255, 255, 0.08));
   transform: translateY(20px);
   /* 想要一点点“呼吸感”就取消下一行注释 */
@@ -294,13 +319,13 @@ body::before {
 .station {
   font-size: 0.9rem;
   letter-spacing: 4px;
-  color: #ff69b4;
+  color: #FF9500; /* 橙色 */
 }
 .title {
-  font-size: 2.2rem;
+  font-size: 2.8rem; /* 加大标题 */
   font-weight: 200;
   letter-spacing: 10px;
-  color: #ffb6c1;
+  color: #FFD180; /* 浅橙色 */
 }
 .sub {
   font-size: 1rem;
@@ -310,7 +335,7 @@ body::before {
 
 /* 星标注释列表 */
 .notes {
-  margin-top: 14px;
+  margin-top: -10px; /* 向上移动 */
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -326,7 +351,7 @@ body::before {
 }
 .note .star {
   width: 18px;
-  color: rgba(255, 182, 193, 0.9);
+  color: #FF9500; /* 橙色 */
   transform: translateY(1px);
   flex: 0 0 auto;
 }
@@ -336,9 +361,13 @@ body::before {
 
 /* Music Archive Button */
 .action-bar {
-  margin-top: 30px;
-  display: flex;
-  justify-content: flex-start;
+  position: absolute;
+  bottom: 70px;
+  left: 80px;
+  margin-top: 0;
+  z-index: 5; /* 确保层级足够高，不被背景遮挡 */
+  /* 让它也能参与推拉动画 */
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .music-btn {
   display: inline-flex;
@@ -346,7 +375,7 @@ body::before {
   gap: 12px;
   padding: 10px 24px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 182, 193, 0.3);
+  border: 1px solid rgba(255, 149, 0, 0.5); /* 橙色边框 */
   border-radius: 50px;
   text-decoration: none;
   transition: all 0.3s ease;
@@ -355,17 +384,17 @@ body::before {
   overflow: hidden;
 }
 .music-btn:hover {
-  background: rgba(255, 105, 180, 0.15);
-  border-color: rgba(255, 105, 180, 0.6);
+  background: rgba(255, 149, 0, 0.15); /* 橙色背景 */
+  border-color: rgba(255, 149, 0, 0.8);
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 105, 180, 0.2);
+  box-shadow: 0 5px 15px rgba(255, 149, 0, 0.2);
 }
 .music-btn:active {
   transform: translateY(0);
 }
 .music-btn .icon {
   font-size: 1.1rem;
-  color: #ffb6c1;
+  color: #FFD180; /* 浅橙色 */
 }
 .music-btn .text {
   font-size: 0.85rem;
@@ -388,10 +417,11 @@ body::before {
 #clock.clock {
   margin-top: 6px;
   font-family: "Courier New", monospace;
-  font-size: 1.7rem;
+  font-size: 2.8rem; /* 大号时钟 */
   letter-spacing: 6px;
-  color: #ff69b4;
+  color: #FF9500; /* 橙色 */
   line-height: 1.1;
+  text-shadow: 0 0 10px rgba(255, 149, 0, 0.3);
 }
 
 /* 巡演信息样式 */
@@ -415,7 +445,7 @@ body::before {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  color: #ffb6c1;
+  color: #FFD180; /* 浅橙色 */
   font-size: 1rem; 
   cursor: pointer;
   z-index: 10;
@@ -432,7 +462,7 @@ body::before {
   border-radius: 50%;
 }
 .nav-btn:hover {
-  background: rgba(255, 105, 180, 0.2);
+  background: rgba(255, 149, 0, 0.2); /* 橙色背景 */
   opacity: 1;
 }
 
@@ -540,8 +570,8 @@ body::before {
   top: 50%;
   right: 10px;
   transform: translateY(-50%) rotate(-20deg);
-  border: 3px solid rgba(255, 105, 180, 0.6);
-  color: rgba(255, 105, 180, 0.6);
+  border: 3px solid rgba(255, 149, 0, 0.6); /* 橙色印章 */
+  color: rgba(255, 149, 0, 0.6);
   border-radius: 50%;
   width: 80px;
   height: 80px;
@@ -553,7 +583,7 @@ body::before {
   letter-spacing: 2px;
   pointer-events: none;
   z-index: 10;
-  box-shadow: 0 0 10px rgba(255, 105, 180, 0.2) inset;
+  box-shadow: 0 0 10px rgba(255, 149, 0, 0.2) inset;
   background: rgba(0, 0, 0, 0.2);
   /* 盖章动画 */
   animation: stampIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
@@ -575,15 +605,15 @@ body::before {
 .tour-date {
   font-family: "Courier New", monospace;
   font-size: 1rem;
-  color: rgba(255, 182, 193, 0.8);
+  color: rgba(255, 209, 128, 0.8); /* 浅橙色 */
   letter-spacing: 2px;
   margin-bottom: 5px;
-  text-shadow: 0 0 5px rgba(255, 105, 180, 0.2);
+  text-shadow: 0 0 5px rgba(255, 149, 0, 0.2);
 }
 .countdown {
   font-family: "Courier New", monospace;
   font-size: 1.2rem;
-  color: #ffb6c1;
+  color: #FF9500; /* 橙色 */
   letter-spacing: 2px;
   white-space: nowrap;
 }
@@ -619,7 +649,7 @@ body::before {
   color: rgba(255, 255, 255, 0.75);
 }
 .roomno b {
-  color: #ffb6c1;
+  color: #FF9500; /* 橙色 */
   font-weight: 400;
 }
 

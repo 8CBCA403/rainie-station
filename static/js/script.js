@@ -89,7 +89,7 @@ function updateAllCountdowns() {
       
       if (isSameDay) {
         el.innerText = "TODAY!";
-        el.style.color = "#ff69b4"; // 亮粉色强调
+        el.style.color = "#FF9500"; // 橙色强调
         el.style.fontWeight = "bold";
       } else {
         // 演出已过，显示已结束并加盖章

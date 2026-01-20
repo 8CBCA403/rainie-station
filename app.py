@@ -62,6 +62,19 @@ def index():
 def music_stats():
     return send_from_directory(app.static_folder, "stats.html")
 
+# 巡演成就页 (Desktop only)
+@app.get("/tour")
+def tour_archive():
+    # 这里我们暂时复用 stats.html 或者创建一个新的页面
+    # 根据用户需求，这里应该是一个展示演唱会成就的界面
+    # 暂时先返回一个简单的 placeholder 页面或者复用 stats.html
+    # 如果没有专门的 tour.html，我们可以先指向 stats.html 或者创建一个简单的
+    if (Path(app.static_folder) / "tour.html").exists():
+        return send_from_directory(app.static_folder, "tour.html")
+    else:
+        # 如果没有 tour.html，暂时用 stats.html 顶替，或者返回一个建设中页面
+        return "Tour Archive Page (Under Construction)"
+
 # API: 搜索歌手并获取热门歌曲
 @app.get("/api/search_singer")
 def search_singer():
