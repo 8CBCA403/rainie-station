@@ -92,12 +92,17 @@ function updateAllCountdowns() {
         el.style.color = "#ff69b4"; // 亮粉色强调
         el.style.fontWeight = "bold";
       } else {
-        // 演出已过，移除该卡片
+        // 演出已过，显示已结束并加盖章
+        el.innerText = ""; // 倒计时位置留空或者写 COMPLETED
+        
         const card = el.closest('.tour-card');
-        if (card) {
-          card.remove();
-          // 刷新按钮状态
-          setTimeout(updateNavButtons, 100);
+        if (card && !card.querySelector('.stamp')) {
+          card.classList.add('finished'); // 加上已完成的类，方便调整整体样式
+          
+          const stamp = document.createElement('div');
+          stamp.className = 'stamp';
+          stamp.innerText = '已结束';
+          card.appendChild(stamp);
         }
         return;
       }

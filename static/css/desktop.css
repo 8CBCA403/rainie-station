@@ -521,6 +521,43 @@ body::before {
   flex-direction: column;
   align-items: flex-end; /* 右对齐内容 */
   min-width: 0; /* 防止 flex item 溢出 */
+  position: relative; /* 为印章定位 */
+}
+
+/* 已结束场次的印章效果 */
+.tour-card.finished .station-name,
+.tour-card.finished .tour-date,
+.tour-card.finished .venue-name {
+  opacity: 0.5; /* 文字变暗 */
+}
+
+.stamp {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%) rotate(-20deg);
+  border: 3px solid rgba(255, 105, 180, 0.6);
+  color: rgba(255, 105, 180, 0.6);
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 0 10px rgba(255, 105, 180, 0.2) inset;
+  background: rgba(0, 0, 0, 0.2);
+  /* 盖章动画 */
+  animation: stampIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes stampIn {
+  0% { opacity: 0; transform: translateY(-50%) rotate(-20deg) scale(2); }
+  100% { opacity: 1; transform: translateY(-50%) rotate(-20deg) scale(1); }
 }
 
 .station-name {

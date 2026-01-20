@@ -176,11 +176,9 @@ def get_upcoming_tours():
 
     try:
         con = get_db_connection()
-        # 查找 tour_date 大于现在的最近的所有场次
-        now = datetime.datetime.now().isoformat()
+        # 查找所有场次，按时间排序
         tours = con.execute(
-            "SELECT * FROM tours WHERE tour_date > ? ORDER BY tour_date ASC",
-            (now,)
+            "SELECT * FROM tours ORDER BY tour_date ASC"
         ).fetchall()
         con.close()
         
