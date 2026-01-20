@@ -180,13 +180,13 @@ body::before {
 /* Hover 时分裂，恢复内侧边框 */
 @media (pointer: fine) {
   /* 关键修复：定义 hover 时变量的变化，否则背景不会动 */
-  .card:hover {
+  /* 通过 JS 控制 .hover-active 类来触发这些效果，而不是 .card:hover */
+  .card.hover-active {
     width: 96%; /* 卡片变宽，模拟推开效果 */
-    /* --hole-radius: 380px;  不再需要挖洞变量 */
   }
 
   /* 鼠标悬停时，背景直接消失 */
-  .card:hover::before {
+  .card.hover-active::before {
     opacity: 0;
   }
   
@@ -196,18 +196,18 @@ body::before {
       关键修改：内容移动距离要比背景大，让它们往两边“多退一点”
       背景推开 0px (纯挖洞)，内容现在推开 140px
    */
-   .card:hover .content .left {
+   .card.hover-active .content .left {
      transform: translateX(-140px);
    }
-   .card:hover .content .right {
+   .card.hover-active .content .right {
      transform: translateX(140px);
    }
    
-   .card:hover .roomno {
+   .card.hover-active .roomno {
     transform: translateX(140px);
     opacity: 0; /* 悬停时消失 */
   }
-   .card:hover .brand-rail {
+   .card.hover-active .brand-rail {
      /* 推出去的同时，直接淡出消失 */
      transform: translateX(140px);
      opacity: 0;
@@ -215,7 +215,7 @@ body::before {
    }
    
    /* 小象图标动画：分裂时缓缓隐藏 */
-   .card:hover .elephant-wrap {
+   .card.hover-active .elephant-wrap {
      opacity: 0;
      transform: scale(0.95);
      /* 增加一点模糊效果，模拟“消失”的感觉 */
@@ -405,6 +405,8 @@ body::before {
   overflow: visible;
   padding-right: 0;
   position: relative;
+  /* 整体右移，突破一点 padding 的限制 */
+  margin-right: -30px;
 }
 
 /* 导航箭头样式 */
@@ -437,7 +439,7 @@ body::before {
 /* 关键定位调整 */
 .nav-btn.prev {
   /* 左箭头：放到内容区域的左侧 */
-  left: 0; 
+  left: 15px; 
   right: auto;
 }
 
@@ -490,6 +492,8 @@ body::before {
   height: 2px;
   background: rgba(255, 255, 255, 0.2);
   margin-bottom: 20px;
+  /* 添加 margin-right 来把它往左挤 */
+  margin-right: 40px;
 }
 .next-label {
   font-size: 0.8rem;

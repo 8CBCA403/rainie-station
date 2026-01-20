@@ -277,3 +277,25 @@ if (mainCard) {
     }
   }, { passive: true });
 }
+
+// 桌面端鼠标交互：只有在卡片中心半径 150px 范围内才触发分裂效果
+if (mainCard && window.matchMedia("(pointer: fine)").matches) {
+  document.addEventListener('mousemove', (e) => {
+    const rect = mainCard.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    // 计算鼠标距离卡片中心的距离
+    const dist = Math.sqrt(
+      Math.pow(e.clientX - centerX, 2) + 
+      Math.pow(e.clientY - centerY, 2)
+    );
+    
+    // 阈值：100px
+    if (dist <= 100) {
+      mainCard.classList.add('hover-active');
+    } else {
+      mainCard.classList.remove('hover-active');
+    }
+  });
+}
