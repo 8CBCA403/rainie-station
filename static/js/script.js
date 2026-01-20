@@ -6,12 +6,19 @@ async function fetchTours() {
     if (response.ok) {
       const data = await response.json();
       if (data && data.length > 0) {
-        // Filter only upcoming tours
+        // Filter: Show ALL "房间里的大象" tours (past & future) + ANY other future tours
         const now = new Date().toISOString();
-        upcomingTours = data.filter(t => t.date >= now);
         
-        // If API returns sorted by date ASC, upcomingTours[0] is the next concert.
-        // If no upcoming tours, upcomingTours will be empty.
+        upcomingTours = data.filter(t => {
+            // 1. Always show "房间里的大象" (current tour), regardless of date
+            if (t.tour_name === "房间里的大象") return true;
+            
+            // 2. For other tours, only show if future
+            return t.date >= now;
+        });
+        
+        // Sort by date ASC
+        upcomingTours.sort((a, b) => new Date(a.date) - new Date(b.date));
         
         if (upcomingTours.length > 0) {
             renderTourSlider();
@@ -94,28 +101,30 @@ function updateAllCountdowns() {
     const targetDate = new Date(tour.date);
     const diff = targetDate - now;
     
+    // 只显示未来的场次
+    // 如果 diff <= 0 (已过期)，直接不处理，保持为空，或者在 renderTourSlider 阶段就过滤掉
+    // 现在的逻辑是 renderTourSlider 已经只渲染 upcomingTours (future only)
+    // 所以这里的 diff <= 0 理论上只会出现于 "TODAY" 或者用户长时间停留页面导致过期
+    
     if (diff <= 0) {
-      // 演出已开始或结束
       const isSameDay = now.toDateString() === targetDate.toDateString();
-      
       if (isSameDay) {
-        el.innerText = "TODAY!";
-        el.style.color = "#FF9500"; // 橙色强调
-        el.style.fontWeight = "bold";
+          el.innerText = "TODAY!";
+          el.style.color = "#FF9500"; 
+          el.style.fontWeight = "bold";
       } else {
-        // 演出已过，显示已结束并加盖章
-        el.innerText = ""; // 倒计时位置留空或者写 COMPLETED
-        
-        const card = el.closest('.tour-card');
-        if (card && !card.querySelector('.stamp')) {
-          card.classList.add('finished'); // 加上已完成的类，方便调整整体样式
+          // For past tours (like completed "房间里的大象" shows), display COMPLETED stamp
+          el.innerText = ""; // Clear text to make room for stamp
           
-          const stamp = document.createElement('div');
-          stamp.className = 'stamp';
-          stamp.innerText = '已结束';
-          card.appendChild(stamp);
-        }
-        return;
+          const card = el.closest('.tour-card');
+          if (card && !card.querySelector('.stamp')) {
+            card.classList.add('finished');
+            
+            const stamp = document.createElement('div');
+            stamp.className = 'stamp';
+            stamp.innerText = '已结束';
+            card.appendChild(stamp);
+          }
       }
     } else {
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
