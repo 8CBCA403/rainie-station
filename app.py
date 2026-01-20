@@ -176,11 +176,13 @@ def get_upcoming_tours():
 
     try:
         con = get_db_connection()
+        print("DEBUG: Executing query SELECT * FROM tours ORDER BY tour_date ASC")
         # 查找所有场次，按时间排序
         tours = con.execute(
             "SELECT * FROM tours ORDER BY tour_date ASC"
         ).fetchall()
         con.close()
+        print(f"DEBUG: Found {len(tours)} tours")
         
         return jsonify([
             {
