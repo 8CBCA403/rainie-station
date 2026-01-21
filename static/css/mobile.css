@@ -150,10 +150,11 @@
     top: auto !important;
     width: 100%;
     justify-content: center;
-    margin: 5px 0;
+    margin: 10px 0; /* 增加上下间距 */
     transform: none !important;
     padding: 0;
     z-index: 10;
+    flex: 0 0 auto; /* 防止被挤压 */
   }
   
   .action-bar-right {
@@ -187,10 +188,10 @@
   .right {
     align-items: center;
     text-align: center;
-    flex: 1;
-    justify-content: flex-end; /* 沉底 */
-    margin-top: 15px; /* 减小间距 */
-    padding-bottom: 15px;
+    flex: 0 0 auto; /* 之前是 flex: 1，导致可能撑开高度 */
+    justify-content: flex-end; 
+    margin-top: 15px;
+    padding-bottom: 25px; /* 增加底部内边距，隔开下方的按钮 */
     width: 100%;
   }
   
@@ -277,5 +278,16 @@
   .card::before,
   .card::after {
     display: none !important;
+  }
+
+  /* 调整已结束印章在移动端的位置 */
+  .stamp {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 0.9rem !important;
+    border-width: 2px !important;
+    right: 0 !important; /* 靠右 */
+    top: 50% !important;
+    transform: translateY(-50%) rotate(-20deg) !important;
   }
 }
