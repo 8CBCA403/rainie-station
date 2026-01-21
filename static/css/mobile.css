@@ -139,9 +139,32 @@
     transform: translateX(-10px); /* 整体左移一点 */
   }
 
-  /* Music Archive Button Mobile Adjustments */
-  .action-bar {
-    display: none;
+  /* Music Archive & Tour Archive Buttons Mobile Adjustments */
+  .action-bar,
+  .action-bar-right {
+    display: flex !important;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    width: 100%;
+    justify-content: center;
+    margin: 5px 0;
+    transform: none !important;
+    padding: 0;
+    z-index: 10;
+  }
+  
+  .action-bar-right {
+      margin-bottom: 30px; /* 底部留白 */
+  }
+
+  .music-btn {
+      width: 75%; /* 按钮宽度 */
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 182, 193, 0.3); /* 淡粉色边框 */
   }
   .note {
     font-size: 0.75rem; /* 字体再小一点 */
