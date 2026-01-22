@@ -210,10 +210,10 @@ body::before {
    .card.hover-active .content .left {
      transform: translateX(-140px);
    }
-   /* 左侧按钮也一起推开 */
-   .card.hover-active .action-bar {
+   /* 左侧按钮也一起推开 - 已在父容器处理，此处不再需要 */
+   /* .card.hover-active .action-bar {
      transform: translateX(-140px);
-   }
+   } */
 
    .card.hover-active .content .right {
      transform: translateX(140px);
