@@ -337,9 +337,10 @@ body::before {
   flex-direction: column;
   gap: 10px;
   max-width: 720px;
-  max-height: 40vh; /* 限制高度，防止遮挡按钮 */
+  max-height: 260px; /* 严格限制高度，确保不遮挡底部按钮 (约 4-5 行歌词) */
   overflow-y: auto; /* 内容过多时滚动 */
   scrollbar-width: none;
+  padding-right: 10px;
 }
 .notes::-webkit-scrollbar {
   display: none;
@@ -364,13 +365,10 @@ body::before {
 
 /* Music Archive Button */
 .action-bar {
-  position: absolute;
-  bottom: 70px;
-  left: 80px;
-  margin-top: 0;
-  z-index: 5; /* 确保层级足够高，不被背景遮挡 */
-  /* 让它也能参与推拉动画 */
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* 移除了 absolute 定位，使其参与流式布局 */
+  margin-top: 20px;
+  z-index: 5;
+  flex-shrink: 0;
 }
 .music-btn {
   display: inline-flex;
