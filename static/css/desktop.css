@@ -414,6 +414,7 @@ body::before {
   text-align: right;
   /* 确保有足够宽度 */
   min-width: 0; 
+  margin-right: -90px;
 }
 #clock.clock {
   margin-top: 6px;
