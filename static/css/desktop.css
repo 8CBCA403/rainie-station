@@ -143,9 +143,11 @@ body::before {
 
 /* 巡演档案入口按钮容器 */
 .action-bar-right {
-  /* 移除了 absolute 定位，使其参与流式布局 */
-  margin-top: 40px; /* 增加一点顶部间距 */
+  position: absolute;
+  bottom: 70px;
+  right: 140px; /* 从 110px 增加到 140px，继续向左移动 */
   width: auto;
+  margin-top: 0;
   padding-right: 0;
   z-index: 5;
   /* 让它也能参与推拉动画 */
