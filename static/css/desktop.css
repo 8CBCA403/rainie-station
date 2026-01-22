@@ -434,7 +434,7 @@ body::before {
   animation: fadeIn 1s ease-out;
   width: 100%;
   overflow: visible;
-  padding-right: 0;
+  padding-right: -20;
   position: relative;
   /* 移除负边距，与上方时间对齐 */
   margin-right: 0;
