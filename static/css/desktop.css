@@ -298,12 +298,14 @@ body::before {
 }
 
 /* 左：宣言/注释 */
-.left {
-  flex: 1.1;
+.left-content-wrapper {
+  flex: 1; /* 占据剩余空间 */
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 22px;
+  justify-content: center; /* 内容垂直居中 */
+  min-height: 0; /* 允许压缩 */
+  overflow: hidden; /* 防止溢出 */
+  gap: 22px; /* 保持原有的间距 */
 }
 .meta {
   display: flex;
