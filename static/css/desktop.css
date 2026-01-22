@@ -438,7 +438,7 @@ body::before {
   padding-right: 0;
   position: relative;
   /* 移除负边距，与上方时间对齐 */
-  margin-right: -90px;
+  margin-right: -30px;
 }
 
 /* 导航箭头样式 */
