@@ -436,8 +436,8 @@ body::before {
   overflow: visible;
   padding-right: 0;
   position: relative;
-  /* 整体右移，突破一点 padding 的限制 */
-  margin-right: -30px;
+  /* 移除负边距，与上方时间对齐 */
+  margin-right: 0;
 }
 
 /* 导航箭头样式 */
