@@ -335,6 +335,12 @@ body::before {
   flex-direction: column;
   gap: 10px;
   max-width: 720px;
+  max-height: 40vh; /* 限制高度，防止遮挡按钮 */
+  overflow-y: auto; /* 内容过多时滚动 */
+  scrollbar-width: none;
+}
+.notes::-webkit-scrollbar {
+  display: none;
 }
 .note {
   display: flex;
@@ -563,7 +569,7 @@ body::before {
 .stamp {
   position: absolute;
   top: 50%;
-  right: 10px;
+  right: 50px; /* 右移避免遮挡箭头 */
   transform: translateY(-50%) rotate(-20deg);
   border: 3px solid rgba(255, 149, 0, 0.6); /* 橙色印章 */
   color: rgba(255, 149, 0, 0.6);
