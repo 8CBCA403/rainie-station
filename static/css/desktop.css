@@ -50,45 +50,40 @@ body::before {
   background-size: cover;
   background-position: center 20%;
   opacity: 0;
-  animation: slideShow 24s infinite;
+  animation: slideShow 20s infinite;
 }
 
 .bg-slide:nth-child(1) {
-  background-image: url('../img/bg1.jpg');
+  background-image: url('../img/ertou/et1.jpg');
   animation-delay: 0s;
 }
 
 .bg-slide:nth-child(2) {
-  background-image: url('../img/bg2.jpg');
+  background-image: url('../img/ertou/et2.jpg');
   animation-delay: 4s;
 }
 
 .bg-slide:nth-child(3) {
-  background-image: url('../img/bg3.jpg');
+  background-image: url('../img/ertou/et3.jpg');
   animation-delay: 8s;
 }
 
 .bg-slide:nth-child(4) {
-  background-image: url('../img/bg4.jpg');
+  background-image: url('../img/ertou/et4.jpg');
   animation-delay: 12s;
 }
 
 .bg-slide:nth-child(5) {
-  background-image: url('../img/bg5.jpg');
+  background-image: url('../img/ertou/et5.jpg');
   animation-delay: 16s;
-}
-
-.bg-slide:nth-child(6) {
-  background-image: url('../img/bg6.jpg');
-  animation-delay: 20s;
 }
 
 /* 轮播动画：淡入淡出 */
 @keyframes slideShow {
   0%   { opacity: 0; transform: scale(1.03); }
   5%   { opacity: 1; transform: scale(1); }
-  20%  { opacity: 1; transform: scale(1); }
-  25%  { opacity: 0; transform: scale(1.02); }
+  25%  { opacity: 1; transform: scale(1); }
+  30%  { opacity: 0; transform: scale(1.02); }
   100% { opacity: 0; transform: scale(1.02); }
 }
 
