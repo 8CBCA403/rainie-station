@@ -50,9 +50,13 @@ let originalHotSongs = [];
 
 // 定期轮询机制
 let pollingInterval = null;
+// 重试计数器 Map，key=mid, value=retryCount
+let retryMap = new Map();
+const MAX_RETRIES = 12; // 12次 * 5秒 = 60秒，超过则放弃
 
 function startPolling(songs) {
     if (pollingInterval) clearInterval(pollingInterval);
+    retryMap.clear();
     
     // 每 5 秒轮询一次状态
     pollingInterval = setInterval(() => {
@@ -66,13 +70,26 @@ function startPolling(songs) {
             // 我们通过检查是否包含 loading-spinner 或特定文本来判断
             if (container) {
                 const text = container.innerText;
-                if (text.includes("等待队列中") || text.includes("数据获取失败") || text.includes("Data queuing") || text.includes("请求超时")) {
-                    hasPending = true;
-                    // 重新触发单个获取
-                    fetchSongIndex(mid, {
-                        dataContainer: container,
-                        chartContainer: document.getElementById(`index-chart-${mid}`)
-                    });
+                const isPending = text.includes("等待队列中") || text.includes("数据获取失败") || text.includes("Data queuing") || text.includes("请求超时");
+                
+                if (isPending) {
+                    // 检查重试次数
+                    let retries = retryMap.get(mid) || 0;
+                    if (retries < MAX_RETRIES) {
+                        hasPending = true;
+                        retryMap.set(mid, retries + 1);
+                        
+                        // 重新触发单个获取
+                        fetchSongIndex(mid, {
+                            dataContainer: container,
+                            chartContainer: document.getElementById(`index-chart-${mid}`)
+                        });
+                    } else {
+                        // 超过重试次数，显示永久失败
+                        if (!text.includes("已停止重试")) {
+                             container.innerHTML = '<span style="opacity:0.3; font-size:0.8rem;">获取超时 (树莓派未响应)</span>';
+                        }
+                    }
                 }
             }
         });
