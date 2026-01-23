@@ -1,48 +1,57 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 搜索框已被注释掉，所以加个判断
     const searchBtn = document.getElementById('search-btn');
     const searchInput = document.getElementById('singer-name');
     
-    searchBtn.addEventListener('click', () => {
-        const name = searchInput.value.trim();
-        if (name) {
-            searchSinger(name);
-        }
-    });
-
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+    if (searchBtn && searchInput) {
+        searchBtn.addEventListener('click', () => {
             const name = searchInput.value.trim();
             if (name) {
                 searchSinger(name);
             }
-        }
-    });
+        });
 
-    // Initial load
-    searchSinger("杨丞琳");
-    
-    // Event listeners for Lyrics Modal
-    document.getElementById('close-lyrics').addEventListener('click', () => {
-        document.getElementById('lyrics-modal').style.display = 'none';
-    });
-    
-    // Close modal when clicking outside
-    document.getElementById('lyrics-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'lyrics-modal') {
-            document.getElementById('lyrics-modal').style.display = 'none';
-        }
-    });
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const name = searchInput.value.trim();
+                if (name) {
+                    searchSinger(name);
+                }
+            }
+        });
+    }
 
     // Event listener for Back to Hot Songs
-    document.getElementById('back-to-hot-btn').addEventListener('click', () => {
-        if (originalHotSongs.length > 0) {
-            renderSongs(originalHotSongs, {});
-            document.getElementById('song-list-title').textContent = '热门歌曲';
-            document.getElementById('back-to-hot-btn').style.display = 'none';
-        }
-    });
+    const backBtn = document.getElementById('back-to-hot-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            if (originalHotSongs.length > 0) {
+                renderSongs(originalHotSongs, {});
+                document.getElementById('song-list-title').textContent = '热门歌曲';
+                backBtn.style.display = 'none';
+            }
+        });
+    }
 
-    // 默认加载杨丞琳
+    // Event listeners for Lyrics Modal
+    const closeLyrics = document.getElementById('close-lyrics');
+    if (closeLyrics) {
+        closeLyrics.addEventListener('click', () => {
+            document.getElementById('lyrics-modal').style.display = 'none';
+        });
+    }
+    
+    // Close modal when clicking outside
+    const lyricsModal = document.getElementById('lyrics-modal');
+    if (lyricsModal) {
+        lyricsModal.addEventListener('click', (e) => {
+            if (e.target.id === 'lyrics-modal') {
+                lyricsModal.style.display = 'none';
+            }
+        });
+    }
+
+    // Initial load
     searchSinger("杨丞琳");
 });
 
