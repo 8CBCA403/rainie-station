@@ -63,10 +63,18 @@ def scrape_music_index(song_mid):
 
         driver = webdriver.Chrome(options=chrome_options)
         
-        logger.info("浏览器已启动，正在加载页面...")
-        driver.get(url)
+        # 设置页面加载超时 (防止网络卡死)
+        driver.set_page_load_timeout(30)
         
-        logger.info("页面加载完成，等待关键元素渲染...")
+        logger.info("浏览器已启动，正在加载页面...")
+        try:
+            driver.get(url)
+        except Exception as e:
+            logger.warning(f"页面加载超时或不完整 (eager mode): {e}")
+        
+        logger.info(f"页面加载阶段结束，当前标题: {driver.title}")
+        
+        logger.info("等待关键元素渲染...")
         WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.CLASS_NAME, "base_data"))
         )
