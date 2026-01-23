@@ -60,7 +60,7 @@ def scrape_music_index(song_mid):
         
         # 伪装成 iPhone (移动端 H5 页面通常需要移动端 UA)
         # 尝试更新 UA，或者使用安卓 UA，避免被识别为旧版 iOS
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+        chrome_options.add_argument("user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1")
         
         # 禁用自动化标记
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
@@ -77,6 +77,10 @@ def scrape_music_index(song_mid):
             logger.warning(f"页面加载超时或不完整 (eager mode): {e}")
         
         logger.info(f"页面加载阶段结束，当前标题: {driver.title}")
+        
+        # === 调试：打印页面源码的前 1000 个字符 ===
+        # 这样我们就能知道到底跳到了什么页面（是验证码？是404？还是App下载页？）
+        logger.info(f"页面源码预览: {driver.page_source[:1000]}")
         
         logger.info("等待关键元素渲染...")
         WebDriverWait(driver, 20).until(
