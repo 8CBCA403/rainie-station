@@ -103,31 +103,21 @@ def tour_archive():
 def search_singer():
     name = request.args.get("name", "杨丞琳")
     
-    url = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp"
-    params = {
-        "w": name,
-        "t": 0,
-        "n": 30,  # 修改为 30 首
-        "page": 1,
-        "cr": 1,
-        "catZhida": 1,
-        "format": "json"
-    }
-    query_string = urllib.parse.urlencode(params)
-    full_url = f"{url}?{query_string}"
+    # 由于服务器端网络限制，无法直接访问 QQ 音乐
+    # 我们改为将搜索请求转发给树莓派 (Tailscale IP: 100.93.253.71)
     
-    headers = {
-        "Referer": "https://y.qq.com/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
+    pi_url = f"http://100.93.253.71:5000/api/search_singer?name={urllib.parse.quote(name)}"
     
     try:
-        req = urllib.request.Request(full_url, headers=headers)
-        with urllib.request.urlopen(req) as response:
+        # 设置超时时间，避免前端等太久
+        req = urllib.request.Request(pi_url)
+        with urllib.request.urlopen(req, timeout=5) as response:
             data = json.loads(response.read().decode('utf-8'))
             return jsonify(data)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Forward search to Pi failed: {e}")
+        # 如果树莓派也挂了，返回 500
+        return jsonify({"error": f"Search failed (Proxy): {str(e)}"}), 500
 
 # API: 获取歌曲详细统计信息 (收藏量)
 # 注意：由于风控原因，目前仅保留接口定义，实际上不进行敏感数据请求

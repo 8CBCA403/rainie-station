@@ -71,6 +71,46 @@ def get_data(mid):
     except Exception as e:
         return jsonify({"code": -1, "error": str(e)}), 500
 
+@app.route('/api/search_singer', methods=['GET'])
+def api_search_singer():
+    """供服务器调用的接口：搜索歌手"""
+    try:
+        # 获取 URL 参数，默认杨丞琳
+        from flask import request
+        name = request.args.get("name", "杨丞琳")
+        logger.info(f"Received search request for: {name}")
+        
+        # 复用 fetch_song_list 的逻辑，但这里我们需要返回完整的 QQ 音乐 API 结构
+        # 为了简单起见，我们直接调用 client_search_cp 并返回它的原始 JSON
+        
+        url = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp"
+        params = {
+            "w": name,
+            "t": 0,
+            "n": 30,
+            "page": 1,
+            "cr": 1,
+            "catZhida": 1,
+            "format": "json"
+        }
+        query_string = urllib.parse.urlencode(params)
+        full_url = f"{url}?{query_string}"
+        
+        headers = {
+            "Referer": "https://y.qq.com/",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        
+        req = urllib.request.Request(full_url, headers=headers)
+        with urllib.request.urlopen(req) as response:
+            content = response.read().decode('utf-8')
+            # 直接返回原始数据
+            return jsonify(json.loads(content))
+            
+    except Exception as e:
+        logger.error(f"Search failed: {e}")
+        return jsonify({"code": -1, "error": str(e)}), 500
+
 def fetch_song_list(singer_name="杨丞琳", count=30):
     """从 QQ 音乐获取实时热门歌曲列表"""
     logger.info(f"正在获取 {singer_name} 的实时歌单...")
