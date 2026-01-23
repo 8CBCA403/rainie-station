@@ -8,7 +8,19 @@ import urllib.parse
 import json
 
 import re
+import logging
 from scrape_selenium import scrape_music_index
+
+# 复用或重新配置日志 (为了确保 app.py 也能打日志)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("server.log", encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger("app")
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "db" / "room64.db"

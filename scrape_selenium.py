@@ -189,11 +189,16 @@ def scrape_music_index(song_mid):
         return result
 
     except Exception as e:
-        print(f"Selenium 抓取失败: {e}")
-        return None
+        logger.error(f"Selenium 抓取失败: {e}")
+        logger.error(traceback.format_exc())
+        return {"error": str(e)}
     finally:
         if driver:
-            driver.quit()
+            try:
+                driver.quit()
+                logger.info("浏览器已关闭")
+            except Exception as e:
+                logger.error(f"关闭浏览器失败: {e}")
 
 if __name__ == "__main__":
     # 测试: 匿名的好友
