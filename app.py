@@ -203,7 +203,37 @@ def get_album_songs():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# API: 获取歌曲详细指数 (爬虫版)
+# API: 接收来自树莓派/本地爬虫的数据推送
+# 为了安全，您可以加一个简单的 token 验证
+@app.post("/api/update_song_stats")
+def update_song_stats():
+    try:
+        data = request.json
+        mid = data.get("mid")
+        stats_data = data.get("data")
+        
+        if not mid or not stats_data:
+            return jsonify({"error": "Missing mid or data"}), 400
+            
+        con = get_db_connection()
+        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # 存入数据库
+        con.execute("""
+            INSERT OR REPLACE INTO song_stats_cache (mid, data, updated_at)
+            VALUES (?, ?, ?)
+        """, (mid, json.dumps(stats_data), now_str))
+        con.commit()
+        con.close()
+        
+        logger.info(f"Received stats update for {mid} from worker")
+        return jsonify({"code": 0, "message": "success"})
+        
+    except Exception as e:
+        logger.error(f"Failed to update stats: {e}")
+        return jsonify({"code": -1, "error": str(e)}), 500
+
+# API: 获取歌曲详细指数 (优先查库，查不到返回提示)
 @app.get("/api/song_index")
 def get_song_index():
     mid = request.args.get("mid")
@@ -211,54 +241,27 @@ def get_song_index():
         return jsonify({"error": "Missing mid"}), 400
         
     try:
-        # 1. Check Cache (24 hours validity)
+        # 1. Check Cache
         con = get_db_connection()
         cached = con.execute("SELECT data, updated_at FROM song_stats_cache WHERE mid = ?", (mid,)).fetchone()
+        con.close()
         
         if cached:
-            # Parse time (assuming stored as string)
-            try:
-                updated_at = datetime.datetime.strptime(cached["updated_at"], "%Y-%m-%d %H:%M:%S")
-                # If less than 24 hours old, use cache
-                if (datetime.datetime.now() - updated_at).total_seconds() < 86400:
-                    con.close()
-                    print(f"DEBUG: Cache hit for {mid}")
-                    return jsonify({"code": 0, "data": json.loads(cached["data"])})
-            except Exception as e:
-                print(f"Cache date parse error: {e}")
-        
-        # 2. Scrape if no cache or expired
-        # 调用 Selenium 爬虫
-        logger.info(f"Cache miss for {mid}, starting scraper...")
-        print(f"DEBUG: Cache miss for {mid}, starting scraper...")
-        data = scrape_music_index(mid)
-        
-        if data and "error" not in data:
-            # 3. Save to Cache
-            try:
-                now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                con.execute("""
-                    INSERT OR REPLACE INTO song_stats_cache (mid, data, updated_at)
-                    VALUES (?, ?, ?)
-                """, (mid, json.dumps(data), now_str))
-                con.commit()
-                logger.info(f"Scraped data saved to cache for {mid}")
-            except Exception as e:
-                logger.error(f"Failed to save cache: {e}")
-                print(f"ERROR: Failed to save cache: {e}")
-            
-            con.close()
-            return jsonify({"code": 0, "data": data})
+            # 无论是否过期，先返回缓存数据 (树莓派会定时更新它)
+            # 或者您可以判断如果太旧，返回一个 "updating" 状态
+            return jsonify({"code": 0, "data": json.loads(cached["data"])})
         else:
-            con.close()
-            error_msg = data.get("error", "Failed to scrape data") if data else "Failed to scrape data"
-            logger.error(f"Scrape failed for {mid}: {error_msg}")
-            print(f"ERROR: Scrape failed for {mid}: {error_msg}")
-            return jsonify({"code": -1, "error": error_msg}), 500
+            # 如果数据库里没有，说明树莓派还没爬到
+            # 返回一个特殊状态，前端可以提示 "正在排队获取中..."
+            # 或者在这里触发一个异步任务通知树莓派 (复杂点)
+            return jsonify({
+                "code": 1, 
+                "message": "Data queuing...", 
+                "data": None # 前端看到 code=1 可以显示“数据加载中，请稍后再来”
+            })
             
     except Exception as e:
         logger.error(f"Unhandled exception in get_song_index: {e}")
-        print(f"ERROR: Unhandled exception in get_song_index: {e}")
         return jsonify({"code": -1, "error": str(e)}), 500
 
 # API: 获取未来所有巡演
