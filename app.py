@@ -240,7 +240,7 @@ def update_song_stats():
         logger.error(f"Failed to update stats: {e}")
         return jsonify({"code": -1, "error": str(e)}), 500
 
-# API: 获取歌曲详细指数 (优先查库，查不到返回提示)
+# API: 获取歌曲详细指数 (优先查库，查不到则尝试从树莓派拉取)
 @app.get("/api/song_index")
 def get_song_index():
     mid = request.args.get("mid")
@@ -248,24 +248,57 @@ def get_song_index():
         return jsonify({"error": "Missing mid"}), 400
         
     try:
-        # 1. Check Cache
+        # 1. 检查本地缓存
         con = get_db_connection()
         cached = con.execute("SELECT data, updated_at FROM song_stats_cache WHERE mid = ?", (mid,)).fetchone()
         con.close()
         
+        # 缓存策略：如果有数据且在1小时内，直接返回
+        # 如果太旧或没有数据，尝试从树莓派拉取
+        now = datetime.datetime.now()
+        is_fresh = False
         if cached:
-            # 无论是否过期，先返回缓存数据 (树莓派会定时更新它)
-            # 或者您可以判断如果太旧，返回一个 "updating" 状态
+            updated_at = datetime.datetime.strptime(cached["updated_at"], "%Y-%m-%d %H:%M:%S")
+            if (now - updated_at).total_seconds() < 3600: # 1小时有效期
+                is_fresh = True
+
+        if is_fresh:
             return jsonify({"code": 0, "data": json.loads(cached["data"])})
-        else:
-            # 如果数据库里没有，说明树莓派还没爬到
-            # 返回一个特殊状态，前端可以提示 "正在排队获取中..."
-            # 或者在这里触发一个异步任务通知树莓派 (复杂点)
-            return jsonify({
-                "code": 1, 
-                "message": "Data queuing...", 
-                "data": None # 前端看到 code=1 可以显示“数据加载中，请稍后再来”
-            })
+        
+        # 2. 尝试从树莓派主动拉取 (Failover)
+        # 注意：这里会阻塞请求约 1-2 秒，取决于树莓派响应速度
+        try:
+            # 树莓派 Tailscale IP
+            pi_url = f"http://100.93.253.71:5000/api/get_data/{mid}"
+            resp = urllib.request.urlopen(pi_url, timeout=3)
+            if resp.status == 200:
+                pi_data = json.loads(resp.read().decode('utf-8'))
+                if pi_data.get("code") == 0 and pi_data.get("data"):
+                    # 拉取成功，更新本地数据库
+                    new_data = pi_data["data"]
+                    con = get_db_connection()
+                    now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+                    con.execute("""
+                        INSERT OR REPLACE INTO song_stats_cache (mid, data, updated_at)
+                        VALUES (?, ?, ?)
+                    """, (mid, json.dumps(new_data), now_str))
+                    con.commit()
+                    con.close()
+                    logger.info(f"Pulled data for {mid} from Raspberry Pi")
+                    return jsonify({"code": 0, "data": new_data})
+        except Exception as e:
+            logger.warning(f"Failed to pull from Raspberry Pi: {e}")
+
+        # 3. 如果拉取失败，退回到旧缓存 (如果有)
+        if cached:
+            return jsonify({"code": 0, "data": json.loads(cached["data"]), "warning": "using_stale_cache"})
+            
+        # 4. 彻底没有数据
+        return jsonify({
+            "code": 1, 
+            "message": "Data queuing...", 
+            "data": None
+        })
             
     except Exception as e:
         logger.error(f"Unhandled exception in get_song_index: {e}")

@@ -3,19 +3,73 @@ import requests
 import logging
 import schedule
 import json
+import threading
+import sqlite3
+import os
 import urllib.request
 import urllib.parse
+from flask import Flask, jsonify
 from scrape_selenium import scrape_music_index
 
 # === 配置 ===
-SERVER_API_URL = "http://100.65.184.87:8000/api/update_song_stats"
+DB_PATH = "pi_data.db"
+PORT = 5000 # 树莓派服务端口
 
 # 配置日志
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("worker.log", encoding='utf-8'),
+        logging.StreamHandler()
+    ]
 )
 logger = logging.getLogger("worker")
+
+# 初始化 Flask
+app = Flask(__name__)
+
+def init_db():
+    """初始化本地数据库"""
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS song_stats (
+                mid TEXT PRIMARY KEY,
+                data TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+def save_data(mid, data):
+    """保存数据到本地"""
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO song_stats (mid, data, updated_at)
+                VALUES (?, ?, datetime('now', 'localtime'))
+            """, (mid, json.dumps(data)))
+        logger.info(f"数据已保存到本地: {mid}")
+    except Exception as e:
+        logger.error(f"保存数据失败: {e}")
+
+@app.route('/api/get_data/<mid>', methods=['GET'])
+def get_data(mid):
+    """供服务器调用的接口：获取指定歌曲数据"""
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.execute("SELECT data, updated_at FROM song_stats WHERE mid = ?", (mid,))
+            row = cursor.fetchone()
+            if row:
+                return jsonify({
+                    "code": 0,
+                    "mid": mid,
+                    "data": json.loads(row[0]),
+                    "updated_at": row[1]
+                })
+            else:
+                return jsonify({"code": 1, "message": "Not found"}), 404
+    except Exception as e:
+        return jsonify({"code": -1, "error": str(e)}), 500
 
 def fetch_song_list(singer_name="杨丞琳", count=30):
     """从 QQ 音乐获取实时热门歌曲列表"""
@@ -42,8 +96,6 @@ def fetch_song_list(singer_name="杨丞琳", count=30):
         req = urllib.request.Request(full_url, headers=headers)
         with urllib.request.urlopen(req) as response:
             data = json.loads(response.read().decode('utf-8'))
-            # 解析 song list
-            # 结构通常是 data -> data -> song -> list
             if "data" in data and "song" in data["data"] and "list" in data["data"]["song"]:
                 songs = data["data"]["song"]["list"]
                 song_mids = [song["songmid"] for song in songs]
@@ -56,11 +108,10 @@ def fetch_song_list(singer_name="杨丞琳", count=30):
         logger.error(f"获取歌单失败: {e}")
         return []
 
-def job():
+def crawl_job():
+    """爬虫任务"""
     logger.info("开始新一轮数据采集任务...")
-    
-    # 动态获取歌曲列表
-    song_list = fetch_song_list(count=30) # 默认30首
+    song_list = fetch_song_list(count=30)
     
     if not song_list:
         logger.warning("未能获取到歌曲列表，跳过本次任务")
@@ -69,52 +120,41 @@ def job():
     for mid in song_list:
         try:
             logger.info(f"正在爬取: {mid}")
-            
-            # 1. 爬取数据
             data = scrape_music_index(mid)
             
             if data and "error" not in data:
-                logger.info(f"爬取成功，正在推送到服务器...")
-                
-                # 2. 推送到云服务器
-                payload = {
-                    "mid": mid,
-                    "data": data
-                }
-                # 安全头
-                headers = {
-                    "Authorization": "Bearer rainie-forever-2026",
-                    "Content-Type": "application/json"
-                }
-                try:
-                    resp = requests.post(SERVER_API_URL, json=payload, headers=headers, timeout=10)
-                    if resp.status_code == 200:
-                        logger.info(f"推送成功: {mid}")
-                    else:
-                        logger.error(f"推送失败: {resp.status_code} - {resp.text}")
-                except Exception as e:
-                    logger.error(f"网络请求异常: {e}")
+                save_data(mid, data)
             else:
                 logger.error(f"爬取失败: {mid} - {data.get('error')}")
             
-            # 礼貌性延迟
             time.sleep(5) 
             
         except Exception as e:
             logger.error(f"任务异常: {e}")
 
-    logger.info("本轮任务结束，等待下一次调度...")
+    logger.info("本轮任务结束")
 
-if __name__ == "__main__":
-    logger.info("树莓派采集节点已启动")
-    
+def run_scheduler():
+    """调度器线程"""
     # 立即运行一次
-    job()
+    crawl_job()
     
-    # 每天凌晨 3 点和下午 3 点运行
-    schedule.every().day.at("03:00").do(job)
-    schedule.every().day.at("15:00").do(job)
+    # 定时任务
+    schedule.every().day.at("03:00").do(crawl_job)
+    schedule.every().day.at("15:00").do(crawl_job)
     
     while True:
         schedule.run_pending()
         time.sleep(60)
+
+if __name__ == "__main__":
+    init_db()
+    
+    # 在单独线程中运行调度器和爬虫，主线程运行 Flask
+    t = threading.Thread(target=run_scheduler)
+    t.daemon = True
+    t.start()
+    
+    logger.info(f"树莓派数据节点已启动，监听端口 {PORT}")
+    # 监听所有 IP (包括 Tailscale IP)
+    app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False)
