@@ -66,7 +66,7 @@ function startPolling(songs) {
             // 我们通过检查是否包含 loading-spinner 或特定文本来判断
             if (container) {
                 const text = container.innerText;
-                if (text.includes("等待队列中") || text.includes("数据获取失败") || text.includes("Data queuing")) {
+                if (text.includes("等待队列中") || text.includes("数据获取失败") || text.includes("Data queuing") || text.includes("请求超时")) {
                     hasPending = true;
                     // 重新触发单个获取
                     fetchSongIndex(mid, {
