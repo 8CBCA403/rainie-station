@@ -1,0 +1,21 @@
+[Unit]
+Description=Rainie Station Worker (Raspberry Pi)
+After=network.target
+
+[Service]
+User=charles
+# 树莓派实际部署目录
+WorkingDirectory=/home/charles/qm
+# 假设虚拟环境在 venv 目录下，如果没有 venv 请改为 /usr/bin/python
+Environment="PATH=/home/charles/qm/venv/bin"
+# 设置 DISPLAY 环境变量，方便 headless chrome 运行
+Environment="DISPLAY=:0"
+ExecStart=/home/charles/qm/venv/bin/python /home/charles/qm/raspberry_pi_worker.py
+Restart=always
+RestartSec=10
+# 确保 logs 目录存在
+StandardOutput=append:/home/charles/qm/worker.log
+StandardError=append:/home/charles/qm/worker.log
+
+[Install]
+WantedBy=multi-user.target
