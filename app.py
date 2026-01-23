@@ -111,9 +111,24 @@ def search_singer():
     try:
         # 设置超时时间，避免前端等太久
         req = urllib.request.Request(pi_url)
-        with urllib.request.urlopen(req, timeout=5) as response:
-            data = json.loads(response.read().decode('utf-8'))
+        with urllib.request.urlopen(req, timeout=8) as response:
+            content = response.read().decode('utf-8')
+            # 增加对 QQ 音乐不规范 JSON 的容错处理
+            # 有时候 QQ 音乐会返回 callback(...) 格式
+            if content.strip().startswith("callback"):
+                 # 去掉 callback( ... )
+                 start = content.find("(") + 1
+                 end = content.rfind(")")
+                 if start > 0 and end > start:
+                     content = content[start:end]
+            
+            # 有时返回的内容前面有空字符
+            data = json.loads(content.strip())
             return jsonify(data)
+            
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON Parse Error from Pi: {e}, Content preview: {content[:100] if 'content' in locals() else 'None'}")
+        return jsonify({"error": f"Invalid JSON from Pi: {str(e)}"}), 502
     except Exception as e:
         logger.error(f"Forward search to Pi failed: {e}")
         # 如果树莓派也挂了，返回 500
