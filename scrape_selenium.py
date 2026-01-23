@@ -90,6 +90,22 @@ def scrape_music_index(song_mid):
             """
         })
         
+        # 核心：注入 Cookie
+        # 访问任意一个 QQ 音乐域名下的页面来设置 Cookie
+        driver.get("https://y.qq.com")
+        
+        # 这里需要填入您真实的 Cookie 字符串
+        # 格式：name=value; name2=value2
+        # 请替换下面的 YOUR_COOKIE_STRING
+        cookie_str = "pgv_pvid=9888223789; fqm_pvqid=aa73bd2d-8891-4459-9991-d3fd1dd14a0c; ts_uid=6903786015; RK=qW/MksAPSL; ptcz=365fccecb0300eae1976f99dc784fa5df954e11503db1e1eb8e097bf91643341; music_ignore_pskey=202306271436Hn@vBj; psrf_access_token_expiresAt=1774327054; wxrefresh_token=; qqmusic_key=Q_H_L_63k3NbttD0oEr3n34KYVsXLRC2lHda3QHt3Lz6JinAtEosLMwcXlanBchImQmMKBcJ2ZlIVPykeEMtW2ZI9vK9idq; psrf_musickey_createtime=1769143054; uin=198646534; psrf_qqopenid=0170E97BDEEEA9B2D171400B3A80A8BE; euin=oKEF7wvs7KoP; qm_keyst=Q_H_L_63k3NbttD0oEr3n34KYVsXLRC2lHda3QHt3Lz6JinAtEosLMwcXlanBchImQmMKBcJ2ZlIVPykeEMtW2ZI9vK9idq; psrf_qqrefresh_token=4ED43700E5CBFD5D077A52CEF4B522E4; wxopenid=; tmeLoginType=2; wxunionid=; psrf_qqaccess_token=45CE3D2302D87320F2FC3DA053B7C046; psrf_qqunionid=8CA39F052C98785246391F8889CA98A0; ts_refer=ADTAGcbshare; fqm_sessionid=aae29a5f-11ee-42cc-a309-53a546ccabea; pgv_info=ssid=s8560956036; ts_last=y.qq.com/m/client/music_index/index.html"
+        
+        for item in cookie_str.split('; '):
+            if '=' in item:
+                name, value = item.split('=', 1)
+                driver.add_cookie({'name': name, 'value': value, 'domain': '.qq.com'})
+        
+        logger.info("Cookie 注入完成")
+
         # 设置页面加载超时 (防止网络卡死)
         driver.set_page_load_timeout(30)
         
