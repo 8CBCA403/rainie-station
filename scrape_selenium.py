@@ -29,9 +29,12 @@ def scrape_music_index(song_mid):
         # 其他必要的稳定性参数
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-setuid-sandbox") # 补充：禁用 setuid 沙盒
         chrome_options.add_argument("--disable-dev-shm-usage") # 关键：防止内存不足导致的崩溃
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-infobars")
+        chrome_options.add_argument("--disable-software-rasterizer") # 补充：禁用软件光栅化
+        chrome_options.add_argument("--remote-debugging-port=9222")
         chrome_options.add_argument("--window-size=375,812") # 设置为手机屏幕大小，更真实
         
         # 禁用图片加载（加速）
@@ -64,27 +67,21 @@ def scrape_music_index(song_mid):
                 binary_location = path
                 break
         
-        if binary_location:
-            print(f"检测到浏览器路径: {binary_location}")
-            chrome_options.binary_location = binary_location
-
-        # 配置 Service (特别是针对树莓派 chromedriver)
-        service = None
-        driver_paths = [
-            "/usr/lib/chromium-browser/chromedriver",
-            "/usr/bin/chromedriver"
-        ]
-        for path in driver_paths:
-            if os.path.exists(path):
-                print(f"检测到 ChromeDriver 路径: {path}")
-                from selenium.webdriver.chrome.service import Service
-                service = Service(executable_path=path)
-                break
-
-        if service:
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-        else:
+        # 自动检测并配置 Chrome
+        chrome_options.binary_location = "/usr/bin/google-chrome" # 强制指定 Chrome 路径
+        
+        # 既然我们用的是官方 Chrome，就不需要手动指定 snap 那些乱七八糟的驱动路径了
+        # 直接让 Selenium Manager 自动管理驱动 (默认行为)
+        # 或者如果你一定要指定，通常官方 Chrome 不带驱动，Selenium 会自动下载到 ~/.cache/selenium
+        
+        # 尝试直接启动，不指定 service，让 Selenium 自动下载匹配的驱动
+        try:
             driver = webdriver.Chrome(options=chrome_options)
+        except Exception as e:
+            print(f"Selenium Manager 自动启动失败，尝试手动指定驱动: {e}")
+            # 如果自动失败，尝试找一下系统驱动
+            driver = webdriver.Chrome(options=chrome_options) # 重试
+
         
         driver.get(url)
         
