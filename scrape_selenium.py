@@ -71,6 +71,25 @@ def scrape_music_index(song_mid):
         
         driver = webdriver.Chrome(options=chrome_options)
         
+        # 启用 CDP 命令，模拟触摸支持 (即使是 PC UA，有时也需要)
+        driver.execute_cdp_cmd("Emulation.setTouchEmulationEnabled", {
+            "enabled": True,
+            "configuration": "mobile"
+        })
+        
+        # 关键：注入 JS 欺骗 navigator.webdriver
+        driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+            "source": """
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined
+                });
+                // 模拟 Touch 事件支持
+                Object.defineProperty(navigator, 'maxTouchPoints', {
+                    get: () => 5
+                });
+            """
+        })
+        
         # 设置页面加载超时 (防止网络卡死)
         driver.set_page_load_timeout(30)
         
