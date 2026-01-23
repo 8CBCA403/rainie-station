@@ -48,6 +48,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let originalHotSongs = [];
 
+// 定期轮询机制
+let pollingInterval = null;
+
+function startPolling(songs) {
+    if (pollingInterval) clearInterval(pollingInterval);
+    
+    // 每 5 秒轮询一次状态
+    pollingInterval = setInterval(() => {
+        let hasPending = false;
+        
+        songs.forEach(song => {
+            const mid = song.songmid || song.mid;
+            const container = document.getElementById(`index-data-${mid}`);
+            
+            // 如果这个格子还显示“等待队列中”或“数据获取失败”，就尝试重新获取
+            // 我们通过检查是否包含 loading-spinner 或特定文本来判断
+            if (container) {
+                const text = container.innerText;
+                if (text.includes("等待队列中") || text.includes("数据获取失败") || text.includes("Data queuing")) {
+                    hasPending = true;
+                    // 重新触发单个获取
+                    fetchSongIndex(mid, {
+                        dataContainer: container,
+                        chartContainer: document.getElementById(`index-chart-${mid}`)
+                    });
+                }
+            }
+        });
+        
+        // 如果所有都加载完了，停止轮询
+        if (!hasPending) {
+            clearInterval(pollingInterval);
+            console.log("All data loaded, polling stopped.");
+        }
+        
+    }, 5000); // 5秒轮询一次
+}
+
 async function searchSinger(name) {
     const songListEl = document.getElementById('song-list');
     
@@ -136,6 +174,9 @@ async function searchSinger(name) {
             
             // 提取并渲染专辑列表
             processAndRenderAlbums(songs);
+            
+            // 启动轮询，等待树莓派数据
+            startPolling(songs);
 
         } else {
             songListEl.innerHTML = '<div class="loading">未找到相关数据</div>';
