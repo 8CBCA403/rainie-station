@@ -20,35 +20,35 @@
 
       body {
         display: block;
-        padding-bottom: 50px;
+        padding-bottom: 3.125rem;
         background: #000a1a;
       }
       
       .page-container {
-        max-width: 1200px;
+        max-width: 75rem;
         margin: 0 auto;
-        padding: 40px 20px;
+        padding: 2.5rem 1.25rem;
       }
 
       header {
         text-align: center;
-        margin-bottom: 60px;
+        margin-bottom: 3.75rem;
         animation: fadeInDown 1s ease-out;
       }
 
       h1 {
         font-size: 3rem;
         color: #FFD180;
-        letter-spacing: 5px;
-        margin-bottom: 10px;
+        letter-spacing: 0.3125rem;
+        margin-bottom: 0.625rem;
         text-transform: uppercase;
-        text-shadow: 0 0 20px rgba(255, 149, 0, 0.3);
+        text-shadow: 0 0 1.25rem rgba(255, 149, 0, 0.3);
       }
 
       .subtitle {
         font-size: 1.2rem;
         color: rgba(255, 255, 255, 0.6);
-        letter-spacing: 2px;
+        letter-spacing: 2.0px;
         font-family: "Courier New", monospace;
       }
 
@@ -56,45 +56,45 @@
       .section-title {
         font-size: 1.8rem;
         color: #fff;
-        border-left: 4px solid #FF9500;
-        padding-left: 15px;
-        margin: 50px 0 30px;
-        letter-spacing: 3px;
+        border-left: 0.25rem solid #FF9500;
+        padding-left: 0.9375rem;
+        margin: 3.125rem 0 1.875rem;
+        letter-spacing: 0.1875rem;
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 0.9375rem;
       }
       
       .section-title span {
         font-size: 0.9rem;
         color: rgba(255, 255, 255, 0.4);
         font-weight: normal;
-        letter-spacing: 1px;
+        letter-spacing: 1.0px;
       }
 
       /* Upcoming Cards */
       .upcoming-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 30px;
+        grid-template-columns: repeat(auto-fill, minmax(18.75rem, 1fr));
+        gap: 1.875rem;
       }
 
       .tour-card-item {
         background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 149, 0, 0.2);
-        border-radius: 20px;
-        padding: 30px;
+        border: 1.0px solid rgba(255, 149, 0, 0.2);
+        border-radius: 1.25rem;
+        padding: 1.875rem;
         transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         position: relative;
         overflow: hidden;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(0.625rem);
       }
 
       .tour-card-item:hover {
-        transform: translateY(-5px);
+        transform: translateY(-0.3125rem);
         background: rgba(255, 255, 255, 0.06);
         border-color: rgba(255, 149, 0, 0.5);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.3);
       }
 
       .tour-card-item::before {
@@ -103,7 +103,7 @@
         top: 0;
         left: 0;
         width: 100%;
-        height: 4px;
+        height: 0.25rem;
         background: linear-gradient(90deg, #FF9500, #FFD180);
         opacity: 0;
         transition: opacity 0.3s;
@@ -116,8 +116,8 @@
       .card-tour-name {
         font-size: 0.9rem;
         color: #FF9500;
-        letter-spacing: 1px;
-        margin-bottom: 10px;
+        letter-spacing: 1.0px;
+        margin-bottom: 0.625rem;
         text-transform: uppercase;
         font-weight: bold;
       }
@@ -125,14 +125,14 @@
       .card-city {
         font-size: 2.2rem;
         font-weight: 300;
-        margin-bottom: 5px;
+        margin-bottom: 0.3125rem;
         color: #fff;
       }
 
       .card-venue {
         font-size: 0.95rem;
         color: rgba(255, 255, 255, 0.6);
-        margin-bottom: 20px;
+        margin-bottom: 1.25rem;
       }
 
       .card-date {
@@ -141,16 +141,16 @@
         color: #FFD180;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 0.625rem;
       }
 
       .status-badge {
         display: inline-block;
-        padding: 4px 10px;
-        border-radius: 4px;
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.25rem;
         font-size: 0.7rem;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 1.0px;
         background: rgba(255, 149, 0, 0.2);
         color: #FF9500;
         margin-left: auto;
@@ -160,18 +160,18 @@
       .past-list {
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 0.9375rem;
       }
 
       .past-item {
         display: grid;
-        grid-template-columns: 120px 1fr 1.5fr 1fr;
+        grid-template-columns: 7.5rem 1fr 1.5fr 1fr;
         align-items: center;
-        padding: 20px;
+        padding: 1.25rem;
         background: rgba(255, 255, 255, 0.02);
-        border-radius: 12px;
+        border-radius: 0.75rem;
         transition: background 0.2s;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1.0px solid rgba(255, 255, 255, 0.05);
       }
 
       .past-item:hover {
@@ -202,7 +202,7 @@
 
       /* Year Divider */
       .year-divider {
-        margin: 40px 0 20px;
+        margin: 2.5rem 0 1.25rem;
         font-size: 4rem;
         font-weight: bold;
         color: rgba(255, 255, 255, 0.05);
@@ -214,30 +214,30 @@
       .year-divider::after {
         content: '';
         position: absolute;
-        bottom: 10px;
+        bottom: 0.625rem;
         left: 0;
         width: 100%;
-        height: 1px;
+        height: 1.0px;
         background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
       }
 
       /* Back Button */
       .back-fixed {
         position: fixed;
-        top: 30px;
-        left: 30px;
+        top: 1.875rem;
+        left: 1.875rem;
         z-index: 100;
         text-decoration: none;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 0.625rem;
         color: rgba(255, 255, 255, 0.6);
         transition: color 0.3s;
         background: rgba(0, 10, 26, 0.8);
-        padding: 8px 15px;
-        border-radius: 30px;
-        backdrop-filter: blur(5px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 0.9375rem;
+        border-radius: 1.875rem;
+        backdrop-filter: blur(0.3125rem);
+        border: 1.0px solid rgba(255, 255, 255, 0.1);
       }
 
       .back-fixed:hover {
@@ -248,14 +248,14 @@
       /* Loading */
       .loading {
         text-align: center;
-        padding: 100px;
+        padding: 6.25rem;
         color: rgba(255, 255, 255, 0.3);
         font-family: "Courier New", monospace;
         animation: pulse 1.5s infinite;
       }
 
       @keyframes fadeInDown {
-        from { opacity: 0; transform: translateY(-20px); }
+        from { opacity: 0; transform: translateY(-1.25rem); }
         to { opacity: 1; transform: translateY(0); }
       }
       
@@ -266,16 +266,16 @@
       }
 
       /* Responsive */
-      @media (max-width: 768px) {
+      @media (max-width: 48rem) {
         .past-item {
           grid-template-columns: 1fr;
-          gap: 5px;
+          gap: 0.3125rem;
           text-align: left;
         }
         .past-tour-name {
           text-align: left;
           order: -1;
-          margin-bottom: 5px;
+          margin-bottom: 0.3125rem;
         }
         .past-date {
           order: 1;
@@ -376,7 +376,7 @@
               <div class="section-title">
                 Upcoming Shows
               </div>
-              <p style="text-align:center; color:rgba(255,255,255,0.3); margin-bottom: 50px;">
+              <p style="text-align:center; color:rgba(255,255,255,0.3); margin-bottom: 3.125rem;">
                 No upcoming shows scheduled at the moment.
               </p>
             `;
