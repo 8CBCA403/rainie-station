@@ -59,7 +59,11 @@ def scrape_music_index(song_mid):
         chrome_options.add_experimental_option('useAutomationExtension', False)
         
         # 伪装成 iPhone (移动端 H5 页面通常需要移动端 UA)
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1")
+        # 尝试更新 UA，或者使用安卓 UA，避免被识别为旧版 iOS
+        chrome_options.add_argument("user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+        
+        # 禁用自动化标记
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 
         driver = webdriver.Chrome(options=chrome_options)
         
