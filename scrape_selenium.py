@@ -68,19 +68,18 @@ def scrape_music_index(song_mid):
                 break
         
         # 自动检测并配置 Chrome
-        chrome_options.binary_location = "/usr/bin/google-chrome" # 强制指定 Chrome 路径
+        chrome_options.binary_location = "/usr/bin/google-chrome" 
         
-        # 既然我们用的是官方 Chrome，就不需要手动指定 snap 那些乱七八糟的驱动路径了
-        # 直接让 Selenium Manager 自动管理驱动 (默认行为)
-        # 或者如果你一定要指定，通常官方 Chrome 不带驱动，Selenium 会自动下载到 ~/.cache/selenium
-        
-        # 尝试直接启动，不指定 service，让 Selenium 自动下载匹配的驱动
+        # 强制指定 Service，不让 Selenium 乱下载
+        # 假设我们已经把驱动放到了 /usr/bin/chromedriver
+        from selenium.webdriver.chrome.service import Service
+        service = Service(executable_path="/usr/bin/chromedriver")
+
         try:
-            driver = webdriver.Chrome(options=chrome_options)
+            driver = webdriver.Chrome(service=service, options=chrome_options)
         except Exception as e:
-            print(f"Selenium Manager 自动启动失败，尝试手动指定驱动: {e}")
-            # 如果自动失败，尝试找一下系统驱动
-            driver = webdriver.Chrome(options=chrome_options) # 重试
+            print(f"指定驱动启动失败，尝试自动模式: {e}")
+            driver = webdriver.Chrome(options=chrome_options)
 
         
         driver.get(url)
