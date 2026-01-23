@@ -164,47 +164,51 @@ async function searchSinger(name) {
 
 
             // 2. 优先从 song.list 获取歌曲列表
-            if (d.song && d.song.list && d.song.list.length > 0) {
-                songs = d.song.list;
-                // 如果之前没拿到歌手信息 (zhida不存在), 尝试从歌曲列表提取
-                if (!singerData && songs[0].singer && songs[0].singer.length > 0) {
-                    singerData = {
-                        name: songs[0].singer[0].name,
-                        pic: `https://y.gtimg.cn/music/photo_new/T001R150x150M000${songs[0].singer[0].mid}.jpg`
-                    };
-                    stats = {
-                        song_num: d.song.totalnum
-                    };
-                }
-            } else if (d.zhida && d.zhida.zhida_singer) {
-                // 如果 song.list 空但 zhida 有歌 (备用)
-                songs = d.zhida.zhida_singer.hotsong || [];
-            }
+    if (d.song && d.song.list && d.song.list.length > 0) {
+        songs = d.song.list;
+        // 如果之前没拿到歌手信息 (zhida不存在), 尝试从歌曲列表提取
+        if (!singerData && songs[0].singer && songs[0].singer.length > 0) {
+            singerData = {
+                name: songs[0].singer[0].name,
+                pic: `https://y.gtimg.cn/music/photo_new/T001R150x150M000${songs[0].singer[0].mid}.jpg`
+            };
         }
+    } else if (d.zhida && d.zhida.zhida_singer) {
+        // 如果 song.list 空但 zhida 有歌 (备用)
+        songs = d.zhida.zhida_singer.hotsong || [];
+    }
+}
 
-        // 只要拿到歌手信息 OR 歌曲列表，就认为成功
-        if (singerData || songs.length > 0) {
-            // 保存原始热门歌曲列表
-            originalHotSongs = songs;
-            
-            // 如果只有歌曲没有歌手信息（极少见），造一个默认的
-            if (!singerData && songs.length > 0) {
-                singerData = { name: name, pic: '' }; 
-            }
-            if (singerData) updateSingerInfo(singerData);
-            
-            updateStats(stats || {});
-            
-            // 渲染歌曲列表
-            renderSongs(songs, {});
-            
-            // 提取并渲染专辑列表
-            processAndRenderAlbums(songs);
-            
-            // 启动轮询，等待树莓派数据
-            startPolling(songs);
+// 只要拿到歌手信息 OR 歌曲列表，就认为成功
+if (singerData || songs.length > 0) {
+    // 保存原始热门歌曲列表
+    originalHotSongs = songs;
+    
+    // 如果只有歌曲没有歌手信息（极少见），造一个默认的
+    if (!singerData && songs.length > 0) {
+        singerData = { name: name, pic: '' }; 
+    }
+    
+    // 注意：不再调用 updateSingerInfo 覆盖简介区域
+    // 只更新头像和名字，不更新 stats.html 中写死的 HTML 简介
+    if (singerData) {
+        document.getElementById('singer-title').textContent = singerData.name;
+        if (singerData.pic) {
+            const picUrl = singerData.pic.replace('150x150', '500x500').replace('300x300', '800x800');
+            document.getElementById('singer-bg').style.backgroundImage = `url('${picUrl}')`;
+        }
+    }
+    
+    // 渲染歌曲列表
+    renderSongs(songs, {});
+    
+    // 提取并渲染专辑列表
+    processAndRenderAlbums(songs);
+    
+    // 启动轮询，等待树莓派数据
+    startPolling(songs);
 
-        } else {
+} else {
             songListEl.innerHTML = '<div class="loading">未找到相关数据</div>';
             document.getElementById('album-list').innerHTML = '<div class="loading">暂无专辑</div>';
         }
