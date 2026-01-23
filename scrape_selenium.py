@@ -44,7 +44,45 @@ def scrape_music_index(song_mid):
         # 伪装成 iPhone (移动端 H5 页面通常需要移动端 UA)
         chrome_options.add_argument("user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1")
 
-        driver = webdriver.Chrome(options=chrome_options)
+        # === 自动检测并配置 Chromium (针对 Linux/树莓派) ===
+        import os
+        import shutil
+        
+        # 常见 Chromium 可执行文件路径
+        chromium_paths = [
+            "/usr/bin/chromium-browser",
+            "/usr/bin/chromium",
+            "/usr/bin/google-chrome-stable",
+            "/usr/bin/google-chrome"
+        ]
+        
+        binary_location = None
+        for path in chromium_paths:
+            if os.path.exists(path):
+                binary_location = path
+                break
+        
+        if binary_location:
+            print(f"检测到浏览器路径: {binary_location}")
+            chrome_options.binary_location = binary_location
+
+        # 配置 Service (特别是针对树莓派 chromedriver)
+        service = None
+        driver_paths = [
+            "/usr/lib/chromium-browser/chromedriver",
+            "/usr/bin/chromedriver"
+        ]
+        for path in driver_paths:
+            if os.path.exists(path):
+                print(f"检测到 ChromeDriver 路径: {path}")
+                from selenium.webdriver.chrome.service import Service
+                service = Service(executable_path=path)
+                break
+
+        if service:
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+        else:
+            driver = webdriver.Chrome(options=chrome_options)
         
         driver.get(url)
         

@@ -191,10 +191,11 @@ def get_song_index():
     try:
         # 调用 Selenium 爬虫
         data = scrape_music_index(mid)
-        if data:
+        if data and "error" not in data:
             return jsonify({"code": 0, "data": data})
         else:
-            return jsonify({"code": -1, "error": "Failed to scrape data"}), 500
+            error_msg = data.get("error", "Failed to scrape data") if data else "Failed to scrape data"
+            return jsonify({"code": -1, "error": error_msg}), 500
     except Exception as e:
         return jsonify({"code": -1, "error": str(e)}), 500
 
