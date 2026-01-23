@@ -39,7 +39,15 @@ def scrape_music_index(song_mid):
         chrome_options = Options()
         
         # === 关键设置：开启无头模式 (不弹框) ===
+        # chrome_options.add_argument("--headless=new") 
+        # PC端调试时可以注释掉上面这行，看到浏览器界面
+        # 但服务器端必须开启，否则报错
+        # 为了调试，暂时开启，但注意服务器可能没有GUI
         chrome_options.add_argument("--headless=new") 
+        
+        # === 优化加载策略 ===
+        # eager: DOMContentLoaded 触发即返回，不等图片和样式表
+        chrome_options.page_load_strategy = 'eager'
         
         # 其他必要的稳定性参数
         chrome_options.add_argument("--disable-gpu")
@@ -47,7 +55,7 @@ def scrape_music_index(song_mid):
         chrome_options.add_argument("--disable-dev-shm-usage") # 关键：防止内存不足导致的崩溃
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-infobars")
-        chrome_options.add_argument("--window-size=375,812") # 设置为手机屏幕大小，更真实
+        chrome_options.add_argument("--window-size=1920,1080") # PC端分辨率
         
         # 禁用图片加载（加速）
         prefs = {"profile.managed_default_content_settings.images": 2}
@@ -58,13 +66,9 @@ def scrape_music_index(song_mid):
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
         
-        # 伪装成 iPhone (移动端 H5 页面通常需要移动端 UA)
-        # 尝试更新 UA，或者使用安卓 UA，避免被识别为旧版 iOS
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1")
+        # PC端 User-Agent (伪装成普通电脑浏览器)
+        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
-        # 禁用自动化标记
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-
         driver = webdriver.Chrome(options=chrome_options)
         
         # 设置页面加载超时 (防止网络卡死)
