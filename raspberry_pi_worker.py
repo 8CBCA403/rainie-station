@@ -45,8 +45,13 @@ def job():
                     "mid": mid,
                     "data": data
                 }
+                # 安全头
+                headers = {
+                    "Authorization": "Bearer rainie-forever-2026",
+                    "Content-Type": "application/json"
+                }
                 try:
-                    resp = requests.post(SERVER_API_URL, json=payload, timeout=10)
+                    resp = requests.post(SERVER_API_URL, json=payload, headers=headers, timeout=10)
                     if resp.status_code == 200:
                         logger.info(f"推送成功: {mid}")
                     else:

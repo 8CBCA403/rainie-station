@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -69,10 +70,18 @@ def scrape_music_index(song_mid):
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
         
-        # 降级：改回 iPhone UA，配合小分辨率，减轻服务器渲染 PC 网页的压力
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1")
+        # PC端 User-Agent (伪装成普通电脑浏览器)
+        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
-        driver = webdriver.Chrome(options=chrome_options)
+        # === 关键修改：手动指定 Chromedriver 路径 (适配树莓派) ===
+        # 树莓派 apt 安装的 chromedriver 通常在 /usr/bin/chromedriver
+        service = Service("/usr/bin/chromedriver")
+        
+        try:
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+        except Exception as e:
+            logger.warning(f"尝试使用默认路径启动失败: {e}，尝试不指定路径...")
+            driver = webdriver.Chrome(options=chrome_options)
         
         # 启用 CDP 命令，模拟触摸支持 (即使是 PC UA，有时也需要)
         driver.execute_cdp_cmd("Emulation.setTouchEmulationEnabled", {

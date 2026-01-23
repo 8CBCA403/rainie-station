@@ -208,6 +208,13 @@ def get_album_songs():
 @app.post("/api/update_song_stats")
 def update_song_stats():
     try:
+        # === 安全验证 ===
+        # 只有带上正确 Token 的请求才会被处理
+        token = request.headers.get("Authorization")
+        if token != "Bearer rainie-forever-2026": # 您可以随便改这个密码
+            logger.warning(f"Unauthorized access attempt from {request.remote_addr}")
+            return jsonify({"error": "Unauthorized"}), 401
+            
         data = request.json
         mid = data.get("mid")
         stats_data = data.get("data")
