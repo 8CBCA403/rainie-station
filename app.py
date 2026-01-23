@@ -8,6 +8,7 @@ import urllib.parse
 import json
 
 import re
+from scrape_selenium import scrape_music_index
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "db" / "room64.db"
@@ -180,6 +181,23 @@ def get_album_songs():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# API: 获取歌曲详细指数 (爬虫版)
+@app.get("/api/song_index")
+def get_song_index():
+    mid = request.args.get("mid")
+    if not mid:
+        return jsonify({"error": "Missing mid"}), 400
+        
+    try:
+        # 调用 Selenium 爬虫
+        data = scrape_music_index(mid)
+        if data:
+            return jsonify({"code": 0, "data": data})
+        else:
+            return jsonify({"code": -1, "error": "Failed to scrape data"}), 500
+    except Exception as e:
+        return jsonify({"code": -1, "error": str(e)}), 500
+
 # API: 获取未来所有巡演
 @app.get("/api/upcoming-tours")
 def get_upcoming_tours():
@@ -215,4 +233,5 @@ if __name__ == "__main__":
     init_db()
         
     # 简单的静态网页服务器
+    # 使用 8000 端口
     app.run(host="0.0.0.0", port=8000, debug=False)

@@ -2,365 +2,11 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>杨丞琳 - 音乐档案</title>
-
     <link rel="icon" type="image/png" href="/static/img/1.png" />
-    <link rel="stylesheet" href="/static/css/desktop.css?v=8" />
+    <link rel="stylesheet" href="/static/css/desktop.css?v=9" />
     <link rel="stylesheet" href="/static/css/mobile.css?v=2" />
-    <style>
-      /* 重写部分样式以适应新的布局 */
-      
-      /* 让 Card 更宽一点，适应数据面板 */
-      .card {
-          --card-w: 1200px;
-          width: 96%; /* 增加宽度 */
-          max-width: 1600px; /* 允许更宽 */
-          height: 88%; /* 增加高度，让票据占据更多屏幕空间 */
-      }
-      
-      /* 禁用 stats 页面的 Hover 动画 */
-      @media (pointer: fine) {
-          .card:hover {
-            width: 96% !important; /* 保持宽度不变 */
-          }
-          .card:hover::before {
-            opacity: 1 !important; /* 背景保持可见 */
-          }
-          .card:hover .content .left,
-          .card:hover .content .right,
-          .card:hover .roomno,
-          .card:hover .brand-rail {
-            transform: none !important; /* 禁止位移 */
-            opacity: 1 !important; /* 禁止淡出 */
-          }
-          .card:hover .elephant-wrap {
-            opacity: 1 !important;
-            transform: none !important;
-            filter: none !important;
-          }
-      }
-      
-      .content {
-          flex-direction: column;
-          padding: 40px;
-          gap: 30px;
-          height: 100%;
-          overflow: hidden; /* 防止内容溢出 */
-      }
-      
-      /* 顶部搜索和基本信息区域 */
-      .top-section {
-          display: flex;
-          gap: 30px;
-          flex: 0 0 auto;
-      }
-      
-      .left-panel {
-          flex: 0 0 320px;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-      }
-      
-      .right-panel {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          min-width: 0; /* 防止flex溢出 */
-      }
-      
-      /* 搜索框 */
-      .search-box {
-          display: flex;
-          gap: 0;
-          border-radius: 8px;
-          overflow: hidden;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-      }
-      .search-input {
-          background: #fff;
-          border: none;
-          color: #333;
-          padding: 12px 15px;
-          font-size: 1rem;
-          flex: 1;
-          outline: none;
-      }
-      .search-btn {
-          background: #20bf64; /* QQ音乐绿 */
-          border: none;
-          color: #fff;
-          padding: 0 25px;
-          cursor: pointer;
-          font-weight: bold;
-          transition: background 0.2s;
-      }
-      .search-btn:hover {
-          background: #1db05b;
-      }
-      
-      /* 歌手卡片 */
-      .singer-card {
-          position: relative;
-          height: 220px;
-          border-radius: 12px;
-          overflow: hidden;
-          background: #333;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      }
-      .singer-bg {
-          position: absolute;
-          inset: 0;
-          background-size: cover;
-          background-position: center;
-          opacity: 0.6;
-          transition: transform 0.5s;
-      }
-      .singer-card:hover .singer-bg {
-          transform: scale(1.05);
-      }
-      .singer-info-overlay {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          padding: 15px;
-          background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-      }
-      .singer-name {
-          font-size: 1.5rem;
-          font-weight: bold;
-          color: #fff;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-      }
-      
-      /* 基本指数面板 */
-      .stats-panel {
-          background: rgba(0, 0, 0, 0.25);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border-radius: 12px;
-          padding: 20px;
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-      .stat-box {
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-      }
-      .stat-label {
-          font-size: 0.85rem;
-          color: rgba(255, 255, 255, 0.8);
-      }
-      .stat-value {
-          font-size: 1.6rem;
-          font-weight: bold;
-          color: #fff;
-          font-family: "DIN Alternate", "Arial", sans-serif;
-      }
-      .stat-value.green { color: #20bf64; }
-      .stat-value.pink { color: #ffb6c1; }
-      .stat-value.blue { color: #4facfe; }
-      
-      /* 双栏布局容器 */
-      .lists-wrapper {
-          flex: 1;
-          display: flex;
-          gap: 20px;
-          min-height: 0; /* 关键：允许子元素滚动 */
-          margin-top: 10px;
-      }
-      
-      .list-section {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          min-width: 0; /* 防止溢出 */
-      }
-      
-      /* 左侧歌曲栏：稍微宽一点 */
-      .left-list {
-          flex: 1.4;
-      }
-      
-      /* 右侧专辑栏 */
-      .right-list {
-          flex: 1;
-      }
-
-      .section-header {
-          display: flex;
-          align-items: baseline;
-          justify-content: space-between;
-          padding: 0 5px;
-      }
-      .sec-title {
-          font-size: 1.1rem; 
-          letter-spacing: 2px;
-          color: #fff;
-          font-weight: bold;
-      }
-      .sec-sub {
-          font-size: 0.75rem; 
-          opacity: 0.7;
-          letter-spacing: 1px;
-          font-family: "DIN Alternate", sans-serif;
-      }
-
-      /* 歌曲列表区域 */
-      .list-container {
-          flex: 1;
-          overflow-y: auto;
-          background: rgba(0, 0, 0, 0.2);
-          border-radius: 12px;
-          padding: 10px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          /* Custom scrollbar */
-          scrollbar-width: thin;
-          scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-      }
-      .list-container::-webkit-scrollbar {
-          width: 6px;
-      }
-      .list-container::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 3px;
-      }
-      
-      .song-item {
-          display: grid;
-          grid-template-columns: 1fr 120px 120px;
-          align-items: center;
-          padding: 15px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          transition: background 0.2s;
-          cursor: pointer;
-      }
-      .song-item:hover {
-          background: rgba(255, 255, 255, 0.12);
-      }
-      .song-main {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-      }
-      .song-title {
-          font-size: 1rem;
-          color: #fff;
-          font-weight: 500;
-      }
-      .song-title.active {
-          color: #20bf64;
-      }
-      .song-meta {
-          font-size: 0.8rem;
-          color: rgba(255, 255, 255, 0.7);
-      }
-      
-      .song-stat {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          font-size: 0.85rem;
-      }
-      .stat-row {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          color: rgba(255, 255, 255, 0.8);
-      }
-      .stat-row i {
-          width: 14px;
-          opacity: 0.7;
-      }
-      .stat-num {
-          font-family: "DIN Alternate", sans-serif;
-          color: #fff;
-      }
-      .stat-num.green { color: #20bf64; }
-      .stat-num.blue { color: #4facfe; }
-
-      /* Loading */
-      .loading {
-          text-align: center;
-          padding: 40px;
-          color: rgba(255, 255, 255, 0.5);
-      }
-
-      /* 移动端适配 */
-      @media (max-width: 900px) {
-          .top-section {
-              flex-direction: column;
-          }
-          .left-panel {
-              flex: auto;
-          }
-          .stats-panel {
-              grid-template-columns: repeat(2, 1fr);
-          }
-          .song-item {
-              grid-template-columns: 1fr auto;
-              gap: 15px;
-          }
-          .song-stat:last-child {
-              display: none; /* 小屏隐藏最后一列 */
-          }
-      }
-
-      /* 专辑列表项样式 */
-      .album-item {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          padding: 12px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          transition: background 0.2s;
-          cursor: pointer;
-      }
-      .album-item:hover {
-          background: rgba(255, 255, 255, 0.12);
-      }
-      .album-cover {
-          width: 48px;
-          height: 48px;
-          border-radius: 6px;
-          background-size: cover;
-          background-position: center;
-          background-color: #222;
-          flex: 0 0 48px;
-      }
-      .album-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          overflow: hidden;
-      }
-      .album-name {
-          font-size: 0.95rem;
-          color: #fff;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-      }
-      .album-date {
-          font-size: 0.75rem;
-          color: rgba(255, 255, 255, 0.7);
-          font-family: "DIN Alternate", sans-serif;
-      }
-    </style>
   </head>
 
   <body>
@@ -369,136 +15,126 @@
       <div class="bg-slide"></div>
       <div class="bg-slide"></div>
       <div class="bg-slide"></div>
-      <div class="bg-slide"></div>
-      <div class="bg-slide"></div>
-      <div class="bg-slide"></div>
     </div>
-    <!-- 遮罩层 -->
     <div id="bg-overlay"></div>
 
     <div class="stage">
-      <div class="card">
-        <!-- 背景大象 -->
+      <!-- 这里的 .card 仅仅作为背景容器，不再限制内部布局 -->
+      <div class="card full-screen-card">
+        <!-- 背景装饰 -->
         <div class="elephant-wrap">
-          <img src="/static/img/1.png" alt="Elephant Line Art" />
+            <img src="/static/img/1.png" alt="Elephant Line Art" />
         </div>
-
-        <!-- 房间号 (Stats页面不再显示) -->
-        <!-- <div class="roomno">房间号：<b>DATA</b></div> -->
-
-        <!-- 全新布局的内容 -->
-        <div class="content">
-            
-            <div class="top-section">
-                <!-- 左侧：搜索 + 歌手图 -->
-                <div class="left-panel">
-                    <div class="search-box">
-                        <input type="text" id="singer-name" class="search-input" value="杨丞琳" placeholder="搜索歌手...">
-                        <button id="search-btn" class="search-btn">搜索</button>
-                    </div>
-                    
-                    <div class="singer-card">
-                        <div id="singer-bg" class="singer-bg" style="background-image: url('');"></div>
-                        <div class="singer-info-overlay">
-                            <div class="singer-name" id="singer-title">Loading...</div>
-                            <div style="font-size: 0.8rem; opacity: 0.8;">QQ MUSIC</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 右侧：基本指数 -->
-                <div class="right-panel">
-                    <div style="font-size: 1.1rem; letter-spacing: 2px; margin-bottom: -10px; color: #fff; display: flex; justify-content: space-between; align-items: center;">
-                        <span>基本指数</span>
-                        <a href="/" style="font-size: 0.8rem; color: rgba(255,255,255,0.6); text-decoration: none; border: 1px solid rgba(255,255,255,0.3); padding: 4px 12px; border-radius: 20px; transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='rgba(255,255,255,0.6)'">
-                            Back Home
-                        </a>
-                    </div>
-                    <div class="stats-panel">
-                        <div class="stat-box">
-                            <div class="stat-label">当前歌曲数量</div>
-                            <div class="stat-value" id="total-songs">-</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">专辑数量</div>
-                            <div class="stat-value blue" id="total-albums">-</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">MV数量</div>
-                            <div class="stat-value pink" id="total-mvs">-</div>
-                        </div>
-                    </div>
-
-                    <!-- 歌手简介区域 (新增) -->
-                    <div id="singer-desc" style="
-                        margin-top: 15px; 
-                        font-size: 0.9rem; 
-                        line-height: 1.6; 
-                        color: rgba(255, 255, 255, 0.9); 
-                        background: rgba(0, 0, 0, 0.2); 
-                        padding: 15px; 
-                        border-radius: 8px;
-                        display: none;">
-                        <!-- 简介内容 -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- 双栏列表区域：歌曲 + 专辑 -->
-            <div class="lists-wrapper">
-                
-                <!-- 左侧：热门歌曲 -->
-                <div class="list-section left-list">
-                    <div class="section-header">
-                        <div class="sec-title" id="song-list-title">热门歌曲</div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                             <button id="back-to-hot-btn" style="display: none; background: none; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">返回热门</button>
-                             <div class="sec-sub">TOP SONGS</div>
-                        </div>
-                    </div>
-                    <div id="song-list" class="list-container">
-                        <div class="loading">正在加载数据...</div>
-                    </div>
-                </div>
-
-                <!-- 右侧：精选专辑 -->
-                <div class="list-section right-list">
-                    <div class="section-header">
-                        <div class="sec-title">精选专辑</div>
-                        <div class="sec-sub">ALBUMS</div>
-                    </div>
-                    <div id="album-list" class="list-container">
-                        <div class="loading">等待数据...</div>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- 右侧竖排品牌栏 -->
         <div class="brand-rail">
-          <div class="vtext">Tree & Skyline Premier Hotel</div>
-          <div class="tag">The Elephant We See</div>
+            <div class="vtext">Tree & Skyline Premier Hotel</div>
+            <div class="tag">The Elephant We See</div>
+        </div>
+
+        <!-- 全新布局容器 -->
+        <div class="stats-container">
+            
+            <!-- 左侧侧边栏 -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <a href="/" class="back-btn">← Back Home</a>
+                </div>
+
+                <div class="singer-card">
+                    <div id="singer-bg" class="singer-bg"></div>
+                    <div class="singer-info-overlay">
+                        <div class="singer-name" id="singer-title">杨丞琳</div>
+                        <div class="platform-tag">QQ MUSIC</div>
+                    </div>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="singer-name" class="search-input" value="杨丞琳" placeholder="Search...">
+                    <button id="search-btn" class="search-btn">🔍</button>
+                </div>
+
+                <div class="basic-stats">
+                    <div class="stat-box">
+                        <div class="stat-val" id="total-songs">-</div>
+                        <div class="stat-lbl">Songs</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val blue" id="total-albums">-</div>
+                        <div class="stat-lbl">Albums</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val pink" id="total-mvs">-</div>
+                        <div class="stat-lbl">MVs</div>
+                    </div>
+                </div>
+                
+                <div id="singer-desc" class="singer-desc">
+                    <!-- 简介内容 -->
+                </div>
+            </div>
+
+            <!-- 右侧主内容区 -->
+            <div class="main-content">
+                <div class="content-header">
+                    <h2 class="section-title">热门歌曲指数看板 <span class="sub-title">TOP SONGS INDEX</span></h2>
+                    <div class="header-actions">
+                        <button id="back-to-hot-btn" style="display: none;" class="action-btn">返回热门列表</button>
+                    </div>
+                </div>
+
+                <!-- 进度条区域 -->
+                <div id="progress-container" style="display: none; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 5px;">
+                        <span id="progress-text">正在分析数据...</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
+                        <div id="progress-bar" style="width: 0%; height: 100%; background: #20bf64; transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+
+                <div id="song-list" class="songs-list-container">
+                    <div class="loading">正在加载数据...</div>
+                </div>
+                
+                <!-- 专辑列表 (折叠或放在底部) -->
+                <div class="albums-section-minimized">
+                    <h3>精选专辑</h3>
+                    <div id="album-list" class="album-grid-mini"></div>
+                </div>
+            </div>
+
         </div>
       </div>
     </div>
 
-    <!-- 歌词弹窗 -->
-    <div id="lyrics-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(10px);">
-        <div style="background: rgba(255,255,255,0.1); width: 90%; max-width: 500px; height: 80%; border-radius: 12px; padding: 30px; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div style="font-size: 1.2rem; font-weight: bold; color: #fff;" id="lyrics-title">歌曲名</div>
-                <button id="close-lyrics" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    <!-- 歌词弹窗 (双栏布局) -->
+    <div id="lyrics-modal" class="modal">
+        <div class="modal-content">
+            <!-- 左侧：歌词 -->
+            <div class="modal-left-panel">
+                <div class="modal-header">
+                    <div class="modal-title" id="lyrics-title">歌曲名</div>
+                    <button id="close-lyrics" class="close-btn">&times;</button>
+                </div>
+                <div id="lyrics-meta" class="lyrics-meta"></div>
+                <div id="lyrics-content" class="lyrics-body">Loading...</div>
             </div>
             
-            <div id="lyrics-meta" style="font-size: 0.9rem; color: #20bf64; margin-bottom: 15px; line-height: 1.6;">
-                <!-- 词曲信息 -->
+            <!-- 右侧：成就列表 -->
+            <div class="modal-right-panel">
+                <div class="achievements-title">🏅 歌曲成就</div>
+                <div id="achievements-list" class="achievement-list">
+                    <div style="text-align:center; margin-top:50px; opacity:0.5;">暂无成就数据</div>
+                </div>
             </div>
-            
-            <div id="lyrics-content" style="flex: 1; overflow-y: auto; color: rgba(255,255,255,0.8); line-height: 1.8; white-space: pre-wrap; text-align: center; font-size: 1rem; padding-right: 10px;">
-                正在加载歌词...
-            </div>
+        </div>
+    </div>
+
+    <!-- 图片放大查看器 (Lightbox) -->
+    <div id="lightbox-modal" class="modal" onclick="this.style.display='none'">
+        <div style="position: relative; max-width: 90vw; max-height: 90vh;">
+            <img id="lightbox-img" src="" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.8);">
+            <button style="position: absolute; top: -40px; right: -40px; background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer;">&times;</button>
         </div>
     </div>
 

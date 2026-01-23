@@ -739,3 +739,386 @@ body::before {
 html {
   -webkit-text-size-adjust: 100%;
 }
+
+/* =========================================
+   全新 Dashboard 布局 (适配 stats.html 重构)
+   ========================================= */
+
+/* 让 card 铺满屏幕，作为背景容器 */
+.card.full-screen-card {
+    width: 95vw !important;
+    height: 90vh !important;
+    max-width: 1800px;
+    padding: 0 !important; /* 清除默认内边距 */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    justify-content: flex-start; /* 强制内容顶部对齐 */
+}
+
+/* 隐藏 Dashboard 模式下不必要的装饰元素，消除顶部空洞 */
+.card.full-screen-card .elephant-wrap,
+.card.full-screen-card .brand-rail,
+.card.full-screen-card .roomno {
+    display: none !important;
+}
+
+/* 核心 Grid 容器 */
+.stats-container {
+    display: grid;
+    grid-template-columns: 300px 1fr; /* 左侧固定 300px，右侧自适应 */
+    gap: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* --- 左侧侧边栏 --- */
+.sidebar {
+    background: rgba(0, 0, 0, 0.2);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+    backdrop-filter: blur(10px);
+}
+
+.sidebar-header {
+    margin-bottom: 10px;
+}
+.back-btn {
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    font-size: 0.9rem;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 5px 12px;
+    border-radius: 20px;
+    transition: all 0.3s;
+}
+.back-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+/* 歌手卡片 */
+.singer-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1/1;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #222;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.singer-bg {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.5s;
+}
+.singer-card:hover .singer-bg { transform: scale(1.05); }
+
+.singer-info-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 15px;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+}
+.singer-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+}
+.platform-tag {
+    font-size: 0.7rem;
+    color: #20bf64;
+    letter-spacing: 1px;
+}
+
+/* 搜索框 */
+.search-box {
+    display: flex;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 2px;
+}
+.search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #fff;
+    padding: 10px;
+    outline: none;
+}
+.search-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: #fff;
+    width: 40px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* 基础统计 */
+.basic-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 10px;
+}
+.stat-box { text-align: center; }
+.stat-val { font-size: 1.2rem; font-weight: bold; color: #fff; font-family: "DIN Alternate", sans-serif; }
+.stat-lbl { font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.stat-val.blue { color: #4facfe; }
+.stat-val.pink { color: #ffb6c1; }
+
+.singer-desc {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.7);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* --- 右侧主内容区 --- */
+.main-content {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 15px;
+}
+.section-title {
+    font-size: 1.8rem;
+    color: #fff;
+    margin: 0;
+}
+.sub-title {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.4);
+    font-weight: normal;
+    margin-left: 10px;
+    letter-spacing: 2px;
+}
+
+/* 歌曲列表容器 */
+.songs-list-container {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 歌曲卡片 (核心样式) */
+.song-item {
+    display: grid;
+    /* 调整布局比例：增加数据列宽度，减少右侧留白 */
+    grid-template-columns: 280px 320px 1fr; 
+    gap: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s;
+    align-items: stretch; /* 让各列高度一致 */
+}
+.song-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 列样式 */
+.song-info-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    padding-right: 20px;
+}
+.song-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.song-album {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+}
+
+.song-index-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    padding-right: 20px;
+}
+
+.song-chart-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px;
+    position: relative;
+}
+
+/* 专辑迷你列表 */
+.albums-section-minimized {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    display: none; /* 默认隐藏，需要时可以打开 */
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+/* Modal 样式 (双栏版) */
+.modal {
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    z-index: 1000; 
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(10px);
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+}
+/* Lightbox 特有样式 */
+#lightbox-modal {
+    cursor: zoom-out;
+    background: rgba(0,0,0,0.95); /* 更黑的背景 */
+}
+.modal-content {
+    background: rgba(30, 30, 30, 0.95);
+    width: 1100px; /* 加宽到 1100px */
+    max-width: 95%;
+    height: 85vh;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: row; /* 改为横向布局 */
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* 左侧：歌词区域 (50%) */
+.modal-left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    border-right: 1px solid rgba(255,255,255,0.1);
+    min-width: 0;
+}
+
+/* 右侧：成就区域 (50%) */
+.modal-right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    background: rgba(0,0,0,0.2);
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.modal-title { font-size: 1.5rem; font-weight: bold; color: #fff; }
+.close-btn { 
+    background: none; border: none; color: rgba(255,255,255,0.6); 
+    font-size: 2rem; cursor: pointer; transition: color 0.2s;
+    line-height: 1;
+}
+.close-btn:hover { color: #fff; }
+
+.lyrics-meta {
+    font-size: 0.9rem;
+    color: #20bf64;
+    margin-bottom: 20px;
+}
+
+.lyrics-body {
+    flex: 1;
+    overflow-y: auto;
+    color: rgba(255,255,255,0.9);
+    text-align: center;
+    line-height: 2;
+    white-space: pre-wrap;
+    font-size: 1.05rem;
+    /* 歌词滚动条 */
+    padding-right: 10px;
+}
+
+/* 成就列表样式 */
+.achievements-title {
+    font-size: 1.1rem;
+    color: #fff;
+    font-weight: bold;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.achievement-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.ach-item {
+    position: relative;
+    padding-left: 20px;
+    border-left: 2px solid rgba(255,255,255,0.1);
+    padding-bottom: 15px;
+}
+.ach-item::before {
+    content: '';
+    position: absolute;
+    left: -6px; top: 0;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #4facfe;
+    box-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+}
+.ach-content {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.5;
+}
+.ach-date {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 4px;
+    font-family: "DIN Alternate", sans-serif;
+}

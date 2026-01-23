@@ -339,6 +339,41 @@ function renderSongs(songs, statsMap) {
     const songListEl = document.getElementById('song-list');
     songListEl.innerHTML = '';
     
+    // 初始化进度条
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    const progressPercent = document.getElementById('progress-percent');
+    
+    if (progressContainer) {
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressPercent.textContent = '0%';
+        progressText.textContent = `准备分析 ${songs.length} 首歌曲...`;
+    }
+
+    let completedCount = 0;
+    const totalCount = songs.length;
+
+    // 进度更新函数
+    const updateProgress = () => {
+        completedCount++;
+        const percent = Math.round((completedCount / totalCount) * 100);
+        if (progressBar) progressBar.style.width = `${percent}%`;
+        if (progressPercent) progressPercent.textContent = `${percent}%`;
+        if (progressText) progressText.textContent = `正在分析: ${completedCount}/${totalCount}`;
+        
+        if (completedCount >= totalCount) {
+            setTimeout(() => {
+                if (progressText) progressText.textContent = '分析完成';
+                // 3秒后淡出进度条
+                setTimeout(() => {
+                    if (progressContainer) progressContainer.style.display = 'none';
+                }, 3000);
+            }, 500);
+        }
+    };
+
     songs.forEach((song, index) => {
         const div = document.createElement('div');
         div.className = 'song-item';
@@ -369,88 +404,311 @@ function renderSongs(songs, statsMap) {
         div.onclick = () => fetchLyrics(songmid, songName, singerName);
 
         div.innerHTML = `
-            <div class="song-main">
-                <div class="song-title ${index < 3 ? 'active' : ''}">${index + 1}. ${escapeHtml(songName)}</div>
-                <div class="song-meta">${escapeHtml(albumName)}</div>
-            </div>
-            <div class="song-stat" style="min-width: 100px;">
-                <div class="stat-row" title="发布时间">
-                    <i>📅</i>
-                    <span class="stat-num pink" style="font-size: 0.9rem;">${escapeHtml(pubTime)}</span>
+            <!-- 1. 左侧：歌曲基础信息 -->
+            <div class="song-info-col">
+                <div class="song-title ${index < 3 ? 'active' : ''}">
+                    <span style="opacity:0.5; margin-right:8px; font-size:0.9em;">#${index + 1}</span>
+                    ${escapeHtml(songName)}
                 </div>
+                <div class="song-album">
+                    💿 ${escapeHtml(albumName)}
+                    <span style="opacity:0.4; margin:0 5px;">|</span>
+                    📅 ${escapeHtml(pubTime.toString().includes('-') ? pubTime : (pubTime == '-' ? '-' : new Date(pubTime).getFullYear()))}
+                </div>
+            </div>
+
+            <!-- 2. 中间：核心指数数据 -->
+            <div class="song-index-col" id="index-data-${songmid}">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div class="loading-spinner"></div>
+                    <span style="opacity:0.5; font-size:0.85rem;">等待队列中...</span>
+                </div>
+            </div>
+
+            <!-- 3. 右侧：走势图与成就 -->
+            <div class="song-chart-col" id="index-chart-${songmid}">
+                <!-- 预留给图表 -->
             </div>
         `;
         songListEl.appendChild(div);
+        
+        // 自动触发获取指数
+        setTimeout(() => {
+            // 更新状态文字
+            const statusEl = document.getElementById(`index-data-${songmid}`).querySelector('span');
+            if (statusEl) statusEl.textContent = '分析数据中...';
+            
+            fetchSongIndex(songmid, {
+                dataContainer: document.getElementById(`index-data-${songmid}`),
+                chartContainer: document.getElementById(`index-chart-${songmid}`)
+            }).finally(() => {
+                updateProgress();
+            });
+        }, index * 1500);
     });
+}
+
+// 简单的 Loading CSS
+const style = document.createElement('style');
+style.innerHTML = `
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.loading-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-top: 2px solid #4facfe;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+`;
+document.head.appendChild(style);
+
+async function fetchSongIndex(mid, containers) {
+    if (!containers.dataContainer) return;
+    
+    try {
+        const response = await fetch(`/api/song_index?mid=${mid}`);
+        const result = await response.json();
+        
+        // 成功获取数据后，将数据绑定到 DOM 元素上，供弹窗使用
+        if (result.code === 0 && result.data) {
+            const d = result.data;
+            
+            // 绑定数据到行元素 (song-item)
+            // 往上找父级 .song-item
+            const songItem = containers.dataContainer.closest('.song-item');
+            if (songItem) {
+                // 将成就数据转为 JSON 字符串存入 dataset
+                songItem.dataset.achievements = JSON.stringify(d.achievements || []);
+            }
+            
+            // --- 渲染中间列：核心数据 ---
+            // 颜色判断辅助函数
+            const getChangeColor = (text) => {
+                if (!text) return '#fff';
+                if (text.includes('下降') || text.includes('-')) return '#20bf64'; // 绿色代表下降
+                if (text.includes('上升') || text.includes('+')) return '#ff5f5f'; // 红色代表上升
+                return '#aaa'; // 无变化
+            };
+
+            containers.dataContainer.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <div>
+                        <div style="color:#20bf64; font-size:1.4rem; font-weight:bold; line-height:1;">${d.music_index || '-'}</div>
+                        <div style="font-size:0.75rem; opacity:0.6; margin-top:2px;">
+                            实时音乐指数 
+                            <span style="opacity:0.5; margin-left:5px; font-size:0.65rem;">${d.update_time || ''}</span>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="color:#ffb6c1; font-size:1.4rem; font-weight:bold; line-height:1;">#${d.global_rank || '-'}</div>
+                        <div style="font-size:0.75rem; opacity:0.6; margin-top:2px;">全站排名</div>
+                    </div>
+                </div>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:rgba(255,255,255,0.03); padding:8px; border-radius:6px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:0.9rem;">${d.yesterday_index || '-'}</div>
+                        <div style="font-size:0.7rem; color:${getChangeColor(d.index_change)}">
+                            ${d.index_change || '-'}
+                        </div>
+                        <div style="font-size:0.65rem; opacity:0.4;">昨日指数</div>
+                    </div>
+                    <div style="text-align:center; border-left:1px solid rgba(255,255,255,0.1);">
+                        <div style="font-size:0.9rem;">${d.yesterday_rank || '-'}</div>
+                        <div style="font-size:0.7rem; color:${getChangeColor(d.rank_change)}">
+                            ${d.rank_change || '-'}
+                        </div>
+                        <div style="font-size:0.65rem; opacity:0.4;">昨日排名</div>
+                    </div>
+                </div>
+            `;
+            
+            // --- 渲染右侧列：走势图与成就 ---
+            let chartHtml = '';
+            if (d.chart_image) {
+                chartHtml = `
+                    <div style="flex:1; display:flex; justify-content:center; align-items:center; width:100%;">
+                        <img src="${d.chart_image}" 
+                             style="max-height:120px; width:auto; max-width:100%; border-radius:6px; opacity:0.95; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor: zoom-in;" 
+                             alt="走势图"
+                             onclick="showLightbox(this.src); event.stopPropagation();">
+                    </div>
+                `;
+            } else {
+                chartHtml = `<div style="flex:1; display:flex; align-items:center; justify-content:center; opacity:0.3; font-size:0.8rem;">暂无走势图</div>`;
+            }
+            
+            // 链接按钮
+            const linkBtn = `
+                <a href="https://y.qq.com/m/client/music_index/index.html?ADTAG=cbshare&channelId=10036163&mid=${mid}&type=${mid}" 
+                   target="_blank" 
+                   style="position:absolute; top:0; right:0; padding:4px 8px; background:rgba(255,255,255,0.1); border-radius:0 0 0 8px; color:#4facfe; font-size:0.7rem; text-decoration:none;">
+                   🔗 源站
+                </a>
+            `;
+            
+            // 容器设为相对定位以便放链接
+            containers.chartContainer.style.position = 'relative';
+            containers.chartContainer.innerHTML = chartHtml + linkBtn;
+            
+        } else {
+            containers.dataContainer.innerHTML = '<span style="opacity:0.3">数据获取失败</span>';
+            containers.chartContainer.innerHTML = '';
+        }
+    } catch (e) {
+        console.error(e);
+        containers.dataContainer.innerHTML = '<span style="opacity:0.3">请求超时</span>';
+    }
 }
 
 async function fetchLyrics(mid, songName, singerName) {
     const modal = document.getElementById('lyrics-modal');
     const titleEl = document.getElementById('lyrics-title');
-    const metaEl = document.getElementById('lyrics-meta');
     const contentEl = document.getElementById('lyrics-content');
-    
-    // Show modal with loading state
+    const metaEl = document.getElementById('lyrics-meta');
+    const achListEl = document.getElementById('achievements-list'); // 新增：成就列表容器
+
+    // 1. 初始化弹窗状态
     modal.style.display = 'flex';
     titleEl.textContent = songName;
-    metaEl.innerHTML = '';
+    metaEl.textContent = `歌手：${singerName}`;
     contentEl.textContent = '正在加载歌词...';
-    
-    try {
-        const response = await fetch(`/api/lyrics?mid=${mid}`);
-        const data = await response.json();
-        
-        if (data.lyric) {
-            // Parse lyrics
-            const rawLyric = data.lyric;
-            const lines = rawLyric.split('\n');
-            let lyricText = '';
-            let composer = '';
-            let lyricist = '';
-            
-            // Regex for parsing metadata
-            const tiReg = /\[ti:(.*?)\]/;
-            const arReg = /\[ar:(.*?)\]/;
-            const alReg = /\[al:(.*?)\]/;
-            const byReg = /\[by:(.*?)\]/;
-            const offsetReg = /\[offset:(.*?)\]/;
-            
-            // Regex for timestamp
-            const timeReg = /\[\d{2}:\d{2}\.\d{2,3}\]/g;
-            
-            lines.forEach(line => {
-                // Check for metadata lines (often in the first few lines without timestamp or with 00:00)
-                if (line.includes('词：')) lyricist = line.replace(/.*词：/, '').replace(/\]/, '').trim();
-                if (line.includes('曲：')) composer = line.replace(/.*曲：/, '').replace(/\]/, '').trim();
-                
-                // Clean lyrics
-                let cleanLine = line
-                    .replace(timeReg, '')
-                    .replace(tiReg, '')
-                    .replace(arReg, '')
-                    .replace(alReg, '')
-                    .replace(byReg, '')
-                    .replace(offsetReg, '')
-                    .trim();
-                    
-                if (cleanLine) {
-                    lyricText += cleanLine + '\n';
-                }
-            });
-            
-            // Build meta info
-            let metaHtml = '';
-            if (lyricist) metaHtml += `作词：${lyricist} `;
-            if (composer) metaHtml += `作曲：${composer}`;
-            
-            metaEl.innerHTML = metaHtml || `${singerName}`;
-            contentEl.textContent = lyricText || '暂无歌词文本';
-        } else {
-            contentEl.textContent = '未找到歌词';
+    achListEl.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">正在加载成就...</div>'; // Loading 状态
+
+    // 2. 获取数据
+    // 尝试从 DOM 获取缓存的成就数据
+    const songItem = document.getElementById(`index-data-${mid}`)?.closest('.song-item');
+    let cachedAchs = null;
+    if (songItem && songItem.dataset.achievements) {
+        try {
+            cachedAchs = JSON.parse(songItem.dataset.achievements);
+        } catch (e) { console.error('解析缓存成就失败', e); }
+    }
+
+    // 如果有缓存，直接显示成就，不再请求 song_index
+    if (cachedAchs) {
+        renderAchievements(cachedAchs, achListEl);
+        // 只请求歌词
+        fetch(`/api/lyrics?mid=${mid}`)
+            .then(res => res.json())
+            .then(data => renderLyrics(data, contentEl))
+            .catch(() => contentEl.textContent = '歌词加载失败');
+    } else {
+        // 没有缓存，并行请求
+        try {
+            const [lyricsRes, indexRes] = await Promise.all([
+                fetch(`/api/lyrics?mid=${mid}`),
+                fetch(`/api/song_index?mid=${mid}`)
+            ]);
+
+            const lyricsData = await lyricsRes.json();
+            renderLyrics(lyricsData, contentEl);
+
+            const indexData = await indexRes.json();
+            if (indexData.code === 0 && indexData.data) {
+                renderAchievements(indexData.data.achievements, achListEl);
+            } else {
+                achListEl.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">暂无成就数据</div>';
+            }
+        } catch (e) {
+            console.error(e);
+            contentEl.textContent = '加载失败';
+            achListEl.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">加载失败</div>';
         }
-    } catch (e) {
-        console.error(e);
-        contentEl.textContent = '歌词加载失败';
+    }
+}
+
+// 辅助函数：渲染歌词
+function renderLyrics(data, container) {
+    const metaEl = document.getElementById('lyrics-meta');
+    
+    if (data.lyric || data.lyrics) {
+        // 兼容不同的字段名 (API 可能返回 lyric 或 lyrics)
+        const rawLyric = data.lyric || data.lyrics;
+        
+        // 解析歌词
+        const lines = rawLyric.split('\n');
+        let lyricText = '';
+        let composer = '';
+        let lyricist = '';
+        
+        // 正则表达式
+        const tiReg = /\[ti:(.*?)\]/;
+        const arReg = /\[ar:(.*?)\]/;
+        const alReg = /\[al:(.*?)\]/;
+        const byReg = /\[by:(.*?)\]/;
+        const offsetReg = /\[offset:(.*?)\]/;
+        const timeReg = /\[\d{2}:\d{2}\.\d{2,3}\]/g;
+        
+        lines.forEach(line => {
+            // 提取元数据
+            if (line.includes('词：') || line.includes('作词')) {
+                lyricist = line.replace(/.*(词|作词)：/, '').replace(/\]/, '').trim();
+            }
+            if (line.includes('曲：') || line.includes('作曲')) {
+                composer = line.replace(/.*(曲|作曲)：/, '').replace(/\]/, '').trim();
+            }
+            
+            // 清洗歌词内容
+            let cleanLine = line
+                .replace(timeReg, '')
+                .replace(tiReg, '')
+                .replace(arReg, '')
+                .replace(alReg, '')
+                .replace(byReg, '')
+                .replace(offsetReg, '')
+                .trim();
+            
+            if (cleanLine) {
+                lyricText += cleanLine + '\n';
+            }
+        });
+        
+        // 渲染元数据
+        let metaHtml = '';
+        if (lyricist) metaHtml += `<span>📝 作词：${lyricist}</span> `;
+        if (composer) metaHtml += `<span style="margin-left:15px;">🎵 作曲：${composer}</span>`;
+        metaEl.innerHTML = metaHtml;
+        
+        // 渲染歌词文本
+        container.textContent = lyricText || '暂无歌词文本';
+        
+        // 如果有翻译
+        if (data.trans) {
+            container.textContent += '\n\n=== 翻译 ===\n\n' + data.trans;
+        }
+    } else {
+        container.textContent = '暂无歌词';
+        metaEl.innerHTML = '';
+    }
+}
+
+// 辅助函数：渲染成就
+function renderAchievements(achs, container) {
+    if (achs && achs.length > 0) {
+        container.innerHTML = achs.map(ach => {
+            const match = ach.match(/^(\d{4}\/\d{2}\/\d{2})\s+(.+)/);
+            const date = match ? match[1] : '';
+            const content = match ? match[2] : ach;
+            return `
+                <div class="ach-item">
+                    ${date ? `<div class="ach-date">${date}</div>` : ''}
+                    <div class="ach-content">${escapeHtml(content)}</div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        container.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">暂无近期成就</div>';
+    }
+}
+
+// Lightbox 显示函数
+function showLightbox(src) {
+    const modal = document.getElementById('lightbox-modal');
+    const img = document.getElementById('lightbox-img');
+    if (modal && img) {
+        img.src = src;
+        modal.style.display = 'flex';
     }
 }
 
