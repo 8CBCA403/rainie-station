@@ -111,6 +111,68 @@ def api_search_singer():
         logger.error(f"Search failed: {e}")
         return jsonify({"code": -1, "error": str(e)}), 500
 
+@app.route('/api/get_lyrics', methods=['GET'])
+def api_get_lyrics():
+    """供服务器调用的接口：获取歌词"""
+    try:
+        from flask import request
+        mid = request.args.get("mid")
+        if not mid:
+            return jsonify({"error": "Missing mid"}), 400
+            
+        logger.info(f"Received lyrics request for: {mid}")
+        
+        # QQ 音乐歌词接口
+        url = "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg"
+        params = {
+            "songmid": mid,
+            "pcachetime": int(time.time() * 1000),
+            "format": "json",
+            "loginUin": 0,
+            "hostUin": 0,
+            "inCharset": "utf8",
+            "outCharset": "utf-8",
+            "notice": 0,
+            "platform": "yqq",
+            "needNewCode": 0
+        }
+        
+        headers = {
+            "Referer": "https://y.qq.com/",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        
+        query_string = urllib.parse.urlencode(params)
+        full_url = f"{url}?{query_string}"
+        
+        req = urllib.request.Request(full_url, headers=headers)
+        with urllib.request.urlopen(req) as response:
+            content = response.read().decode('utf-8')
+            # QQ 音乐有时返回 jsonp，虽然我们请求了 json，还是防一手
+            if content.startswith("MusicJsonCallback("):
+                content = content[18:-1]
+                
+            data = json.loads(content)
+            
+            # Base64 解码歌词
+            import base64
+            lyric = ""
+            trans = ""
+            if "lyric" in data:
+                lyric = base64.b64decode(data["lyric"]).decode('utf-8')
+            if "trans" in data:
+                trans = base64.b64decode(data["trans"]).decode('utf-8')
+                
+            return jsonify({
+                "lyric": lyric,
+                "trans": trans,
+                "source": "qq_music"
+            })
+            
+    except Exception as e:
+        logger.error(f"Get lyrics failed: {e}")
+        return jsonify({"code": -1, "error": str(e)}), 500
+
 def fetch_song_list(singer_name="杨丞琳", count=30):
     """从 QQ 音乐获取实时热门歌曲列表"""
     logger.info(f"正在获取 {singer_name} 的实时歌单...")

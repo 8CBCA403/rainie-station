@@ -134,34 +134,17 @@ def get_lyrics():
     if not songmid:
         return jsonify({"error": "Missing songmid"}), 400
         
-    url = "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg"
-    params = {
-        "songmid": songmid,
-        "format": "json",
-        "nobase64": 1,
-        "g_tk": 5381
-    }
-    
-    query_string = urllib.parse.urlencode(params)
-    full_url = f"{url}?{query_string}"
-    
-    headers = {
-        "Referer": "https://y.qq.com/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
+    # 转发给树莓派
+    pi_url = f"http://100.93.253.71:5000/api/get_lyrics?mid={songmid}"
     
     try:
-        req = urllib.request.Request(full_url, headers=headers)
-        with urllib.request.urlopen(req) as response:
-            content = response.read().decode('utf-8')
-            # QQ Music lyrics API sometimes returns JSONP-ish or loose JSON
-            # But with format=json, it should be clean JSON.
-            # However, sometimes it wraps in callback. Let's check.
-            # Based on previous test, it returned clean JSON: {"retcode":0,...}
-            data = json.loads(content)
+        req = urllib.request.Request(pi_url)
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode('utf-8'))
             return jsonify(data)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Forward lyrics to Pi failed: {e}")
+        return jsonify({"error": f"Get lyrics failed (Proxy): {str(e)}"}), 500
 
 # API: 获取专辑详情（含歌曲列表）
 @app.get("/api/album_songs")
