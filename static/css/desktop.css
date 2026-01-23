@@ -795,7 +795,7 @@ html {
 /* 核心 Grid 容器 */
 .stats-container {
     display: grid;
-    grid-template-columns: 18.75rem 1fr; /* 左侧固定 18.75rem，右侧自适应 */
+    grid-template-columns: 22rem 1fr; /* 左侧更宽，右侧自适应 */
     gap: 0;
     width: 100%;
     height: 100%;
@@ -806,10 +806,10 @@ html {
 .sidebar {
     background: rgba(0, 0, 0, 0.2);
     border-right: 1.0px solid rgba(255, 255, 255, 0.05);
-    padding: 1.5625rem;
+    padding: 1.75rem 1.75rem 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.5rem;
     overflow-y: auto;
     backdrop-filter: blur(0.625rem);
 }
@@ -907,13 +907,79 @@ html {
 .stat-val.pink { color: #ffb6c1; }
 
 .singer-desc {
-    font-size: 0.85rem;
-    line-height: 1.6;
-    color: rgba(255,255,255,0.7);
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: rgba(255,255,255,0.76);
     /* 移除 max-height 限制，允许自然撑开 */
     max-height: none; 
     overflow-y: visible;
     flex: 1; /* 占据剩余空间 */
+}
+
+.bio-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.bio-intro {
+    font-size: 0.95rem;
+    line-height: 1.85;
+    color: rgba(255,255,255,0.82);
+}
+
+.bio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.bio-title {
+    font-size: 0.95rem;
+    line-height: 1.4;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #4facfe;
+}
+
+.bio-group:nth-of-type(3) .bio-title {
+    color: #ffd700;
+}
+
+.bio-text {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.74);
+}
+
+.bio-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.bio-list li {
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: rgba(255,255,255,0.78);
+}
+
+.bio-divider {
+    margin-top: 0.75rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.bio-divider p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.9);
+    font-weight: 700;
 }
 
 /* --- 右侧主内容区 --- */
@@ -959,8 +1025,7 @@ html {
 /* 歌曲卡片 (核心样式) */
 .song-item {
     display: grid;
-    /* 调整布局比例：增加数据列宽度，减少右侧留白 */
-    grid-template-columns: 17.5rem 20rem 1fr; 
+    grid-template-columns: minmax(18rem, 20rem) minmax(20rem, 22rem) 12rem;
     gap: 1.25rem;
     background: rgba(255, 255, 255, 0.03);
     border: 1.0px solid rgba(255, 255, 255, 0.05);
