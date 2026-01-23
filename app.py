@@ -303,17 +303,19 @@ def get_song_index():
         cached = con.execute("SELECT data, updated_at FROM song_stats_cache WHERE mid = ?", (mid,)).fetchone()
         con.close()
         
-        # 缓存策略：如果有数据且在1小时内，直接返回
-        # 如果太旧或没有数据，尝试从树莓派拉取
-        now = datetime.datetime.now()
-        is_fresh = False
+        # 缓存策略：如果有数据，直接返回 (因为现在树莓派会主动推送最新数据过来)
+        # 只要推送成功，本地缓存就是最新的
         if cached:
+            # 检查是否过期太久 (比如超过24小时)，如果太久可能推送机制挂了
             updated_at = datetime.datetime.strptime(cached["updated_at"], "%Y-%m-%d %H:%M:%S")
-            if (now - updated_at).total_seconds() < 3600: # 1小时有效期
-                is_fresh = True
-
-        if is_fresh:
-            return jsonify({"code": 0, "data": json.loads(cached["data"])})
+            now = datetime.datetime.now()
+            
+            # 只有在数据非常老 (超过4小时) 的情况下，才尝试主动去拉
+            # 正常情况下，树莓派的推送会保证数据是新鲜的 (30分钟-1小时)
+            if (now - updated_at).total_seconds() < 14400: 
+                return jsonify({"code": 0, "data": json.loads(cached["data"])})
+            else:
+                logger.info(f"数据已过期 (>4h)，尝试主动从树莓派拉取: {mid}")
         
         # 2. 尝试从树莓派主动拉取 (Failover)
         # 注意：这里会阻塞请求约 1-2 秒，取决于树莓派响应速度

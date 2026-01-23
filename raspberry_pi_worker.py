@@ -45,7 +45,8 @@ def init_db():
         """)
 
 def save_data(mid, data):
-    """保存数据到本地"""
+    """保存数据到本地，并推送到主服务器"""
+    # 1. 保存到本地 SQLite
     try:
         with sqlite3.connect(DB_PATH) as conn:
             conn.execute("""
@@ -55,6 +56,27 @@ def save_data(mid, data):
         logger.info(f"数据已保存到本地: {mid}")
     except Exception as e:
         logger.error(f"保存数据失败: {e}")
+
+    # 2. 推送到主服务器 (Push Mode)
+    # 这样主服务器不需要去拉取，也能实时获得更新
+    try:
+        push_url = f"{MAIN_SERVER_URL}/api/update_song_stats"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer rainie-forever-2026"
+        }
+        payload = {
+            "mid": mid,
+            "data": data
+        }
+        resp = requests.post(push_url, json=payload, headers=headers, timeout=5)
+        if resp.status_code == 200:
+            logger.info(f"数据已推送到主服务器: {mid}")
+        else:
+            logger.warning(f"推送数据失败: {resp.status_code} - {resp.text}")
+    except Exception as e:
+        # 推送失败不影响本地保存
+        logger.warning(f"推送数据异常: {e}")
 
 @app.route('/api/get_data/<mid>', methods=['GET'])
 def get_data(mid):
