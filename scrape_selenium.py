@@ -102,7 +102,9 @@ def scrape_music_index(song_mid):
         for item in cookie_str.split('; '):
             if '=' in item:
                 name, value = item.split('=', 1)
+                # 关键：同时为 .qq.com 和 .y.qq.com 设置 Cookie
                 driver.add_cookie({'name': name, 'value': value, 'domain': '.qq.com'})
+                driver.add_cookie({'name': name, 'value': value, 'domain': 'y.qq.com'})
         
         logger.info("Cookie 注入完成")
         
