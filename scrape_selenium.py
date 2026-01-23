@@ -55,7 +55,10 @@ def scrape_music_index(song_mid):
         chrome_options.add_argument("--disable-dev-shm-usage") # 关键：防止内存不足导致的崩溃
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-infobars")
-        chrome_options.add_argument("--window-size=1920,1080") # PC端分辨率
+        # 降级：改回小分辨率，减少渲染压力
+        chrome_options.add_argument("--window-size=375,812") 
+        # 降级：强制单进程 (省内存，但可能不稳定)
+        # chrome_options.add_argument("--single-process") 
         
         # 禁用图片加载（加速）
         prefs = {"profile.managed_default_content_settings.images": 2}
@@ -66,8 +69,8 @@ def scrape_music_index(song_mid):
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
         
-        # PC端 User-Agent (伪装成普通电脑浏览器)
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        # 降级：改回 iPhone UA，配合小分辨率，减轻服务器渲染 PC 网页的压力
+        chrome_options.add_argument("user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1")
         
         driver = webdriver.Chrome(options=chrome_options)
         
@@ -114,7 +117,7 @@ def scrape_music_index(song_mid):
         # 我们先试试直接访问目标页
         
         # 恢复正常的超时
-        driver.set_page_load_timeout(30)
+        driver.set_page_load_timeout(60) # 降级：放宽超时时间
         
         logger.info("浏览器已启动，正在加载页面...")
         try:
