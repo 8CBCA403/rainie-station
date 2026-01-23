@@ -29,7 +29,9 @@ def scrape_music_index(song_mid):
         # 其他必要的稳定性参数
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-dev-shm-usage") # 关键：防止内存不足导致的崩溃
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument("--disable-infobars")
         chrome_options.add_argument("--window-size=375,812") # 设置为手机屏幕大小，更真实
         
         # 禁用图片加载（加速）

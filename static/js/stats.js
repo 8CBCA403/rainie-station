@@ -431,21 +431,58 @@ function renderSongs(songs, statsMap) {
             </div>
         `;
         songListEl.appendChild(div);
+    });
+
+    // === 改为串行请求，防止服务器爆炸 ===
+    processQueue(songs);
+}
+
+// 新增：串行处理队列
+async function processQueue(songs) {
+    const songListEl = document.getElementById('song-list');
+    
+    // 初始化进度
+    const progressText = document.getElementById('progress-text');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    
+    let completedCount = 0;
+    const totalCount = songs.length;
+
+    for (const [index, song] of songs.entries()) {
+        const songmid = song.songmid || song.mid;
         
-        // 自动触发获取指数
-        setTimeout(() => {
-            // 更新状态文字
-            const statusEl = document.getElementById(`index-data-${songmid}`).querySelector('span');
-            if (statusEl) statusEl.textContent = '分析数据中...';
-            
-            fetchSongIndex(songmid, {
+        // 更新 UI 状态
+        const statusEl = document.getElementById(`index-data-${songmid}`)?.querySelector('span');
+        if (statusEl) statusEl.textContent = '正在分析...';
+        
+        // 执行请求 (await 确保串行)
+        try {
+            await fetchSongIndex(songmid, {
                 dataContainer: document.getElementById(`index-data-${songmid}`),
                 chartContainer: document.getElementById(`index-chart-${songmid}`)
-            }).finally(() => {
-                updateProgress();
             });
-        }, index * 1500);
-    });
+        } catch (e) {
+            console.error(`Failed to process ${songmid}`, e);
+        }
+
+        // 更新进度条
+        completedCount++;
+        const percent = Math.round((completedCount / totalCount) * 100);
+        if (progressBar) progressBar.style.width = `${percent}%`;
+        if (progressPercent) progressPercent.textContent = `${percent}%`;
+        if (progressText) progressText.textContent = `正在分析: ${completedCount}/${totalCount}`;
+        
+        // 稍微休息一下，给服务器喘息时间
+        await new Promise(r => setTimeout(r, 1000));
+    }
+    
+    // 完成
+    if (progressText) progressText.textContent = '所有歌曲分析完成';
+    setTimeout(() => {
+        const container = document.getElementById('progress-container');
+        if (container) container.style.display = 'none';
+    }, 3000);
 }
 
 // 简单的 Loading CSS

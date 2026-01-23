@@ -157,7 +157,7 @@ function updateTime() {
     day: "2-digit",
   })
     .format(now)
-    .replaceAll("/", ".");
+    .replace(/\//g, "."); // 兼容性更好的替换方式
 
   const timeStr = new Intl.DateTimeFormat("zh-CN", {
     timeZone: "Asia/Shanghai",
