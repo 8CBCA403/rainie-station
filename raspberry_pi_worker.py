@@ -16,8 +16,8 @@ DB_PATH = "pi_data.db"
 PORT = 5000 # 树莓派服务端口
 # === 配置主服务器地址 ===
 # 如果主服务器在另一台机器，请改为实际 IP，例如 "http://192.168.1.100:5000"
-# 如果使用 Tailscale，请使用 Tailscale IP
-MAIN_SERVER_URL = "http://127.0.0.1:5000" 
+# 根据您的 Ping 测试，主服务器 (Windows) 的 IP 是 100.65.184.87，且运行在 8000 端口
+MAIN_SERVER_URL = "http://100.65.184.87:8000" 
 
 # 配置日志
 logging.basicConfig(
@@ -299,10 +299,10 @@ def run_scheduler():
             # 连接失败不要崩溃，只是记录警告
             logger.warning(f"连接主服务器失败: {e}")
 
-    # 每 30 秒轮询一次
-    schedule.every(30).seconds.do(poll_server)
+    # 每 5 秒轮询一次，提高响应速度
+    schedule.every(5).seconds.do(poll_server)
     
-    logger.info("调度器已启动: 包含定时任务 + 指令轮询")
+    logger.info("调度器已启动: 包含定时任务 + 指令轮询 (5s)")
     
     while True:
         schedule.run_pending()
