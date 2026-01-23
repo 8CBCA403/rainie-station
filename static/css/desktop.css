@@ -2,14 +2,19 @@
 html {
   font-size: 16px;
 }
-@media (max-width: 1600px) {
+/* Desktop scaling - strictly for desktop/tablet landscape */
+@media (max-width: 1600px) and (min-width: 769px) {
   html { font-size: 14px; }
 }
-@media (max-width: 1366px) {
+@media (max-width: 1366px) and (min-width: 769px) {
   html { font-size: 13px; }
 }
-@media (max-width: 1200px) {
+@media (max-width: 1200px) and (min-width: 769px) {
   html { font-size: 12px; }
+}
+/* Mobile Reset */
+@media (max-width: 768px) {
+  html { font-size: 16px; }
 }
 
 * {
