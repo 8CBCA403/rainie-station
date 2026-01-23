@@ -105,8 +105,13 @@ def scrape_music_index(song_mid):
                 driver.add_cookie({'name': name, 'value': value, 'domain': '.qq.com'})
         
         logger.info("Cookie 注入完成")
-
-        # 设置页面加载超时 (防止网络卡死)
+        
+        # 刷新页面以生效 (或者直接跳转目标页)
+        # 既然注入了 PC Cookie，我们可以试着伪装成 PC 浏览器去访问 H5
+        # 但是！QQ音乐的 Cookie 是分域名的，y.qq.com 的 Cookie 可能不通用于 m.y.qq.com
+        # 我们先试试直接访问目标页
+        
+        # 恢复正常的超时
         driver.set_page_load_timeout(30)
         
         logger.info("浏览器已启动，正在加载页面...")
