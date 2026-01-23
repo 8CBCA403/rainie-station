@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('back-to-hot-btn').style.display = 'none';
         }
     });
+
+    // 默认加载杨丞琳
+    searchSinger("杨丞琳");
 });
 
 let originalHotSongs = [];
