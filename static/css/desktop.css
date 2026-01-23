@@ -795,7 +795,8 @@ html {
 /* 核心 Grid 容器 */
 .stats-container {
     display: grid;
-    grid-template-columns: 18.75rem 1fr; /* 左侧固定 18.75rem，右侧自适应 */
+    /* 调整比例：左侧加宽到 22rem，给文字更多空间 */
+    grid-template-columns: 22rem 1fr; 
     gap: 0;
     width: 100%;
     height: 100%;
@@ -806,10 +807,10 @@ html {
 .sidebar {
     background: rgba(0, 0, 0, 0.2);
     border-right: 1.0px solid rgba(255, 255, 255, 0.05);
-    padding: 1.5625rem;
+    padding: 2rem; /* 增加内边距 */
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.5rem; /* 增加垂直间距 */
     overflow-y: auto;
     backdrop-filter: blur(0.625rem);
 }
@@ -959,9 +960,13 @@ html {
 /* 歌曲卡片 (核心样式) */
 .song-item {
     display: grid;
-    /* 调整布局比例：增加数据列宽度，减少右侧留白 */
-    grid-template-columns: 17.5rem 20rem 1fr; 
-    gap: 1.25rem;
+    /* 调整布局比例：
+       1. 歌名列 (1.2fr): 保证长歌名不换行
+       2. 数据列 (1.2fr): 给三个数值足够的空间
+       3. 图表列 (0.8fr): 压缩图表宽度，减少留白
+    */
+    grid-template-columns: 1.2fr 1.2fr 0.8fr; 
+    gap: 1.5rem;
     background: rgba(255, 255, 255, 0.03);
     border: 1.0px solid rgba(255, 255, 255, 0.05);
     border-radius: 0.75rem;
