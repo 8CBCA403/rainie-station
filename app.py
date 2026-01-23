@@ -25,6 +25,7 @@ logger = logging.getLogger("app")
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "db" / "room64.db"
 SCHEMA_PATH = BASE_DIR / "db" / "schema.sql"
+TOURS_JSON_PATH = BASE_DIR / "db" / "tours.json"
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
@@ -32,6 +33,36 @@ def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+def seed_tours_from_json(con):
+    if not TOURS_JSON_PATH.exists():
+        return
+    try:
+        with open(TOURS_JSON_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f) or []
+    except Exception as e:
+        logger.warning(f"Failed to load tours.json: {e}")
+        return
+
+    for item in data:
+        tour_name = item.get("tour_name") or "Unknown Tour"
+        city = item.get("city")
+        tour_date = item.get("date") or item.get("tour_date")
+        venue = item.get("venue")
+        status = item.get("status") or "scheduled"
+        if not city or not tour_date:
+            continue
+
+        con.execute(
+            """
+            INSERT INTO tours (tour_name, city, tour_date, venue, status)
+            SELECT ?, ?, ?, ?, ?
+            WHERE NOT EXISTS (
+                SELECT 1 FROM tours WHERE tour_name = ? AND city = ? AND tour_date = ?
+            )
+            """,
+            (tour_name, city, tour_date, venue, status, tour_name, city, tour_date),
+        )
 
 def init_db():
     if not DB_PATH.parent.exists():
@@ -49,6 +80,7 @@ def init_db():
             updated_at TIMESTAMP
         )
     """)
+    seed_tours_from_json(con)
     con.commit()
     con.close()
     print(f"Database schema initialized at {DB_PATH}")

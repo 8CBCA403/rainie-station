@@ -836,6 +836,7 @@ html {
     position: relative;
     width: 100%;
     aspect-ratio: 1/1;
+    min-height: 14rem;
     border-radius: 0.75rem;
     overflow: hidden;
     background: #222;
@@ -847,6 +848,7 @@ html {
     background-size: cover;
     background-position: center;
     transition: transform 0.5s;
+    background-image: linear-gradient(135deg, rgba(79, 172, 254, 0.18), rgba(32, 191, 100, 0.08));
 }
 .singer-card:hover .singer-bg { transform: scale(1.05); }
 
@@ -1025,7 +1027,7 @@ html {
 /* 歌曲卡片 (核心样式) */
 .song-item {
     display: grid;
-    grid-template-columns: minmax(18rem, 20rem) minmax(20rem, 22rem) 12rem;
+    grid-template-columns: minmax(18rem, 1fr) minmax(20rem, 1.2fr) minmax(12rem, 14rem);
     gap: 1.25rem;
     background: rgba(255, 255, 255, 0.03);
     border: 1.0px solid rgba(255, 255, 255, 0.05);
