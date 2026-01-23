@@ -229,6 +229,8 @@ function updateSingerInfo(singer) {
     // 如果有简介信息，可以在这里显示
     // 目前搜索接口返回的简介较少，这里可以放一些静态文案或者基于统计数据的生成文案
     const descEl = document.getElementById('singer-desc');
+    /* 
+    // 禁用 JS 对简介区域的修改，保持 HTML 静态内容
     if (descEl) {
         if (singer.songNum) {
             descEl.style.display = 'block';
@@ -242,6 +244,7 @@ function updateSingerInfo(singer) {
             descEl.style.display = 'none';
         }
     }
+    */
 }
 
 function updateStats(stats) {
