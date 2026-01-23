@@ -14,6 +14,10 @@ from scrape_selenium import scrape_music_index
 # === 配置 ===
 DB_PATH = "pi_data.db"
 PORT = 5000 # 树莓派服务端口
+# === 配置主服务器地址 ===
+# 如果主服务器在另一台机器，请改为实际 IP，例如 "http://192.168.1.100:5000"
+# 如果使用 Tailscale，请使用 Tailscale IP
+MAIN_SERVER_URL = "http://127.0.0.1:5000" 
 
 # 配置日志
 logging.basicConfig(
@@ -238,16 +242,49 @@ def crawl_job():
 
 def run_scheduler():
     """调度器线程"""
-    # 立即运行一次
-    crawl_job()
+    # 立即运行一次爬虫 (可选，启动时跑一次)
+    # crawl_job()
     
-    # 定时任务
+    # === 自动定时任务 (保底策略) ===
+    # 每天凌晨 3 点和下午 3 点自动运行，防止指令系统失效
     schedule.every().day.at("03:00").do(crawl_job)
     schedule.every().day.at("15:00").do(crawl_job)
     
+    # === 指令轮询任务 (心跳) ===
+    # 每 30 秒检查一次服务器是否有新指令
+    def poll_server():
+        try:
+            # logger.info("正在检查服务器指令...") # 日志太多可以注释掉
+            resp = requests.get(f"{MAIN_SERVER_URL}/api/worker/poll", timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("has_command"):
+                    cmd_data = data.get("data", {})
+                    command = cmd_data.get("command")
+                    logger.info(f"收到服务器指令: {command}")
+                    
+                    if command == "refresh_all":
+                        # 立即触发全量爬取
+                        # 使用线程异步执行，避免阻塞轮询循环
+                        threading.Thread(target=crawl_job).start()
+                    elif command == "refresh_one":
+                        # 仅刷新特定歌曲 (预留)
+                        mid = cmd_data.get("params", {}).get("mid")
+                        if mid:
+                            logger.info(f"执行单曲刷新: {mid}")
+                            # threading.Thread(target=scrape_one, args=(mid,)).start()
+        except Exception as e:
+            # 连接失败不要崩溃，只是记录警告
+            logger.warning(f"连接主服务器失败: {e}")
+
+    # 每 30 秒轮询一次
+    schedule.every(30).seconds.do(poll_server)
+    
+    logger.info("调度器已启动: 包含定时任务 + 指令轮询")
+    
     while True:
         schedule.run_pending()
-        time.sleep(60)
+        time.sleep(1)
 
 if __name__ == "__main__":
     init_db()

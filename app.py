@@ -83,6 +83,8 @@ def index():
 # 音乐统计页
 @app.get("/music")
 def music_stats():
+    # 当用户访问此页面时，尝试触发刷新
+    try_trigger_auto_refresh()
     return send_from_directory(app.static_folder, "stats.html")
 
 # 巡演成就页 (Desktop only)
@@ -97,6 +99,66 @@ def tour_archive():
     else:
         # 如果没有 tour.html，暂时用 stats.html 顶替，或者返回一个建设中页面
         return "Tour Archive Page (Under Construction)"
+
+# === Worker 指令控制系统 ===
+# 使用简单的内存队列存储指令 (重启后丢失，但在此时够用了)
+# 生产环境建议用 Redis 或 数据库
+COMMAND_QUEUE = []
+LAST_AUTO_REFRESH_TIME = None # 记录上一次自动触发刷新的时间
+AUTO_REFRESH_COOLDOWN = 1800  # 冷却时间：30分钟 (1800秒)
+
+def try_trigger_auto_refresh():
+    """尝试触发自动刷新 (带冷却检查)"""
+    global LAST_AUTO_REFRESH_TIME
+    now = datetime.datetime.now()
+    
+    # 检查冷却时间
+    if LAST_AUTO_REFRESH_TIME:
+        elapsed = (now - LAST_AUTO_REFRESH_TIME).total_seconds()
+        if elapsed < AUTO_REFRESH_COOLDOWN:
+            logger.info(f"自动刷新处于冷却中 (剩余 {int(AUTO_REFRESH_COOLDOWN - elapsed)} 秒)")
+            return False
+            
+    # 触发刷新
+    LAST_AUTO_REFRESH_TIME = now
+    COMMAND_QUEUE.append({
+        "command": "refresh_all",
+        "timestamp": now.isoformat(),
+        "params": {"source": "auto_visit_trigger"}
+    })
+    logger.info("界面访问触发自动刷新指令 (refresh_all)")
+    return True
+
+@app.route('/api/worker/command', methods=['POST'])
+def send_worker_command():
+    """前端或管理员调用此接口，给树莓派下达指令"""
+    try:
+        data = request.json
+        cmd = data.get('command')
+        if not cmd:
+            return jsonify({"error": "Missing command"}), 400
+            
+        # 将指令加入队列
+        COMMAND_QUEUE.append({
+            "command": cmd,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "params": data.get('params', {})
+        })
+        logger.info(f"指令已入列: {cmd}")
+        return jsonify({"status": "queued", "queue_length": len(COMMAND_QUEUE)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/worker/poll', methods=['GET'])
+def worker_poll():
+    """树莓派 Worker 每分钟调用一次此接口，获取最新指令"""
+    if COMMAND_QUEUE:
+        # 取出最早的一条指令 (FIFO)
+        cmd = COMMAND_QUEUE.pop(0)
+        logger.info(f"指令已下发给 Worker: {cmd['command']}")
+        return jsonify({"has_command": True, "data": cmd})
+    else:
+        return jsonify({"has_command": False})
 
 # API: 搜索歌手并获取热门歌曲
 @app.get("/api/search_singer")
