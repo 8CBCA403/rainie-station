@@ -6,6 +6,19 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import time
 import re
+import logging
+import traceback
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("server.log", encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 def scrape_music_index(song_mid):
     """
@@ -13,6 +26,8 @@ def scrape_music_index(song_mid):
     """
     driver = None
     try:
+        logger.info(f"开始抓取任务: mid={song_mid}")
+        
         # 构造目标 URL
         # 关键修改：移除 openinqqmusic=1 参数，防止自动跳转到下载页
         # 改为 openinqqmusic=0 试试，或者直接不带
@@ -48,14 +63,14 @@ def scrape_music_index(song_mid):
 
         driver = webdriver.Chrome(options=chrome_options)
         
+        logger.info("浏览器已启动，正在加载页面...")
         driver.get(url)
         
-        # 等待关键元素加载 (例如 "音乐指数" 这个文本或者具体的数值节点)
-        # 根据您的截图，数据在一个 class="base_data" 的容器里
-        # print("等待页面渲染...")
-        WebDriverWait(driver, 15).until(
+        logger.info("页面加载完成，等待关键元素渲染...")
+        WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.CLASS_NAME, "base_data"))
         )
+        logger.info("关键元素已出现")
         
         # 给一点额外的缓冲时间让数字跳动动画结束
         time.sleep(2)

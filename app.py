@@ -229,6 +229,8 @@ def get_song_index():
         
         # 2. Scrape if no cache or expired
         # 调用 Selenium 爬虫
+        logger.info(f"Cache miss for {mid}, starting scraper...")
+        print(f"DEBUG: Cache miss for {mid}, starting scraper...")
         data = scrape_music_index(mid)
         
         if data and "error" not in data:
@@ -240,17 +242,23 @@ def get_song_index():
                     VALUES (?, ?, ?)
                 """, (mid, json.dumps(data), now_str))
                 con.commit()
+                logger.info(f"Scraped data saved to cache for {mid}")
             except Exception as e:
-                print(f"Failed to save cache: {e}")
+                logger.error(f"Failed to save cache: {e}")
+                print(f"ERROR: Failed to save cache: {e}")
             
             con.close()
             return jsonify({"code": 0, "data": data})
         else:
             con.close()
             error_msg = data.get("error", "Failed to scrape data") if data else "Failed to scrape data"
+            logger.error(f"Scrape failed for {mid}: {error_msg}")
+            print(f"ERROR: Scrape failed for {mid}: {error_msg}")
             return jsonify({"code": -1, "error": error_msg}), 500
             
     except Exception as e:
+        logger.error(f"Unhandled exception in get_song_index: {e}")
+        print(f"ERROR: Unhandled exception in get_song_index: {e}")
         return jsonify({"code": -1, "error": str(e)}), 500
 
 # API: 获取未来所有巡演
