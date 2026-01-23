@@ -29,12 +29,9 @@ def scrape_music_index(song_mid):
         # 其他必要的稳定性参数
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-setuid-sandbox") # 补充：禁用 setuid 沙盒
         chrome_options.add_argument("--disable-dev-shm-usage") # 关键：防止内存不足导致的崩溃
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-infobars")
-        chrome_options.add_argument("--disable-software-rasterizer") # 补充：禁用软件光栅化
-        chrome_options.add_argument("--remote-debugging-port=9222")
         chrome_options.add_argument("--window-size=375,812") # 设置为手机屏幕大小，更真实
         
         # 禁用图片加载（加速）
@@ -49,38 +46,7 @@ def scrape_music_index(song_mid):
         # 伪装成 iPhone (移动端 H5 页面通常需要移动端 UA)
         chrome_options.add_argument("user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1")
 
-        # === 自动检测并配置 Chromium (针对 Linux/树莓派) ===
-        import os
-        import shutil
-        
-        # 常见 Chromium 可执行文件路径
-        chromium_paths = [
-            "/usr/bin/chromium-browser",
-            "/usr/bin/chromium",
-            "/usr/bin/google-chrome-stable",
-            "/usr/bin/google-chrome"
-        ]
-        
-        binary_location = None
-        for path in chromium_paths:
-            if os.path.exists(path):
-                binary_location = path
-                break
-        
-        # 自动检测并配置 Chrome
-        chrome_options.binary_location = "/usr/bin/google-chrome" 
-        
-        # 强制指定 Service，不让 Selenium 乱下载
-        # 假设我们已经把驱动放到了 /usr/bin/chromedriver
-        from selenium.webdriver.chrome.service import Service
-        service = Service(executable_path="/usr/bin/chromedriver")
-
-        try:
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-        except Exception as e:
-            print(f"指定驱动启动失败，尝试自动模式: {e}")
-            driver = webdriver.Chrome(options=chrome_options)
-
+        driver = webdriver.Chrome(options=chrome_options)
         
         driver.get(url)
         

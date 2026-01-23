@@ -28,6 +28,16 @@ def init_db():
     con = get_db_connection()
     with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
         con.executescript(f.read())
+        
+    # Create cache table if not exists
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS song_stats_cache (
+            mid TEXT PRIMARY KEY,
+            data TEXT,
+            updated_at TIMESTAMP
+        )
+    """)
+    con.commit()
     con.close()
     print(f"Database schema initialized at {DB_PATH}")
 
@@ -189,13 +199,45 @@ def get_song_index():
         return jsonify({"error": "Missing mid"}), 400
         
     try:
+        # 1. Check Cache (24 hours validity)
+        con = get_db_connection()
+        cached = con.execute("SELECT data, updated_at FROM song_stats_cache WHERE mid = ?", (mid,)).fetchone()
+        
+        if cached:
+            # Parse time (assuming stored as string)
+            try:
+                updated_at = datetime.datetime.strptime(cached["updated_at"], "%Y-%m-%d %H:%M:%S")
+                # If less than 24 hours old, use cache
+                if (datetime.datetime.now() - updated_at).total_seconds() < 86400:
+                    con.close()
+                    print(f"DEBUG: Cache hit for {mid}")
+                    return jsonify({"code": 0, "data": json.loads(cached["data"])})
+            except Exception as e:
+                print(f"Cache date parse error: {e}")
+        
+        # 2. Scrape if no cache or expired
         # 调用 Selenium 爬虫
         data = scrape_music_index(mid)
+        
         if data and "error" not in data:
+            # 3. Save to Cache
+            try:
+                now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                con.execute("""
+                    INSERT OR REPLACE INTO song_stats_cache (mid, data, updated_at)
+                    VALUES (?, ?, ?)
+                """, (mid, json.dumps(data), now_str))
+                con.commit()
+            except Exception as e:
+                print(f"Failed to save cache: {e}")
+            
+            con.close()
             return jsonify({"code": 0, "data": data})
         else:
+            con.close()
             error_msg = data.get("error", "Failed to scrape data") if data else "Failed to scrape data"
             return jsonify({"code": -1, "error": error_msg}), 500
+            
     except Exception as e:
         return jsonify({"code": -1, "error": str(e)}), 500
 

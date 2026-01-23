@@ -433,12 +433,14 @@ function renderSongs(songs, statsMap) {
         songListEl.appendChild(div);
     });
 
-    // === 改为串行请求，防止服务器爆炸 ===
-    processQueue(songs);
+    // === 并发控制 ===
+    // 服务器性能较弱 (2核2G)，必须限制并发为 1，否则 5 个浏览器实例会撑爆内存
+    const CONCURRENT_LIMIT = 1; 
+    processQueue(songs, CONCURRENT_LIMIT);
 }
 
-// 新增：串行处理队列
-async function processQueue(songs) {
+// 带并发限制的队列处理
+async function processQueue(songs, limit) {
     const songListEl = document.getElementById('song-list');
     
     // 初始化进度
@@ -448,41 +450,55 @@ async function processQueue(songs) {
     
     let completedCount = 0;
     const totalCount = songs.length;
+    let activeCount = 0;
+    let index = 0;
 
-    for (const [index, song] of songs.entries()) {
+    const next = () => {
+        if (index >= totalCount) return;
+        
+        const song = songs[index];
+        const currentIndex = index;
+        index++;
+        activeCount++;
+
         const songmid = song.songmid || song.mid;
         
         // 更新 UI 状态
         const statusEl = document.getElementById(`index-data-${songmid}`)?.querySelector('span');
         if (statusEl) statusEl.textContent = '正在分析...';
         
-        // 执行请求 (await 确保串行)
-        try {
-            await fetchSongIndex(songmid, {
-                dataContainer: document.getElementById(`index-data-${songmid}`),
-                chartContainer: document.getElementById(`index-chart-${songmid}`)
-            });
-        } catch (e) {
-            console.error(`Failed to process ${songmid}`, e);
-        }
+        // 执行请求
+        fetchSongIndex(songmid, {
+            dataContainer: document.getElementById(`index-data-${songmid}`),
+            chartContainer: document.getElementById(`index-chart-${songmid}`)
+        }).finally(() => {
+            activeCount--;
+            completedCount++;
+            
+            // 更新进度条
+            const percent = Math.round((completedCount / totalCount) * 100);
+            if (progressBar) progressBar.style.width = `${percent}%`;
+            if (progressPercent) progressPercent.textContent = `${percent}%`;
+            if (progressText) progressText.textContent = `正在分析: ${completedCount}/${totalCount}`;
+            
+            // 继续处理下一个
+            if (index < totalCount) {
+                next();
+            } else if (activeCount === 0) {
+                // 全部完成
+                if (progressText) progressText.textContent = '所有歌曲分析完成';
+                setTimeout(() => {
+                    const container = document.getElementById('progress-container');
+                    if (container) container.style.display = 'none';
+                }, 3000);
+            }
+        });
+    };
 
-        // 更新进度条
-        completedCount++;
-        const percent = Math.round((completedCount / totalCount) * 100);
-        if (progressBar) progressBar.style.width = `${percent}%`;
-        if (progressPercent) progressPercent.textContent = `${percent}%`;
-        if (progressText) progressText.textContent = `正在分析: ${completedCount}/${totalCount}`;
-        
-        // 稍微休息一下，给服务器喘息时间
-        await new Promise(r => setTimeout(r, 1000));
+    // 启动初始批次
+    for (let i = 0; i < Math.min(limit, totalCount); i++) {
+        next();
     }
-    
-    // 完成
-    if (progressText) progressText.textContent = '所有歌曲分析完成';
-    setTimeout(() => {
-        const container = document.getElementById('progress-container');
-        if (container) container.style.display = 'none';
-    }, 3000);
 }
 
 // 简单的 Loading CSS
