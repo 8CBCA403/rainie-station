@@ -799,16 +799,8 @@ function renderLyrics(data, container) {
         const timeReg = /\[\d{2}:\d{2}\.\d{2,3}\]/g;
 
         lines.forEach(line => {
-            // 提取元数据
-            if (line.includes('词：') || line.includes('作词')) {
-                lyricist = line.replace(/.*(词|作词)：/, '').replace(/\]/, '').trim();
-            }
-            if (line.includes('曲：') || line.includes('作曲')) {
-                composer = line.replace(/.*(曲|作曲)：/, '').replace(/\]/, '').trim();
-            }
-
-            // 清洗歌词内容
-            let cleanLine = line
+            // 先移除时间与 LRC 标签，再识别署名，避免把 [00:00.000] 显示到顶部。
+            const cleanLine = line
                 .replace(timeReg, '')
                 .replace(tiReg, '')
                 .replace(arReg, '')
@@ -817,21 +809,35 @@ function renderLyrics(data, container) {
                 .replace(offsetReg, '')
                 .trim();
 
+            const lyricistMatch = cleanLine.match(/^(?:作?词|填词)\s*[:：]\s*(.+)$/);
+            if (lyricistMatch) {
+                lyricist = lyricistMatch[1].trim();
+                return;
+            }
+
+            const composerMatch = cleanLine.match(/^(?:作?曲|谱曲)\s*[:：]\s*(.+)$/);
+            if (composerMatch) {
+                composer = composerMatch[1].trim();
+                return;
+            }
+
             if (cleanLine) {
                 lyricText += cleanLine + '\n';
             }
         });
 
         // 渲染元数据
-        let metaHtml = '';
-        if (lyricist) metaHtml += `<span>📝 作词：${lyricist}</span> `;
-        if (composer) metaHtml += `<span style="margin-left:15px;">🎵 作曲：${composer}</span>`;
+        const metaItems = [];
+        if (lyricist) metaItems.push(`作词：${escapeHtml(lyricist)}`);
+        if (composer) metaItems.push(`作曲：${escapeHtml(composer)}`);
         const providerNames = { netease: '网易云', qq: 'QQ 音乐', kugou: '酷狗' };
         const sourceName = providerNames[data.provider] || '';
         if (sourceName) {
-            metaHtml += `<span style="margin-left:15px; opacity:0.7;">歌词来源：${escapeHtml(sourceName)}${data.cached ? '（缓存）' : ''}</span>`;
+            metaItems.push(`歌词来源：${escapeHtml(sourceName)}${data.cached ? '（缓存）' : ''}`);
         }
-        metaEl.innerHTML = metaHtml;
+        metaEl.innerHTML = metaItems
+            .map(item => `<span style="white-space:nowrap;">${item}</span>`)
+            .join('<span style="opacity:0.35; margin:0 10px;">·</span>');
 
         // 渲染歌词文本
         container.textContent = lyricText || '暂无歌词文本';
