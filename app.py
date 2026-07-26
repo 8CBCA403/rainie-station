@@ -119,7 +119,15 @@ def build_fallback_search_payload(name: str):
 
 
 def compact_song_key(name: str):
-    return re.sub(r"[\s·・]+", "", name or "").casefold()
+    key = re.sub(r"[\s·・]+", "", name or "").casefold()
+    # Different providers commonly append equivalent live markers to the title.
+    # Treat these as the same catalog song so the preferred provider can win.
+    return re.sub(
+        r"[\(\[（【](?:live(?:版|version)?|现场(?:版)?)[\)\]）】]$",
+        "",
+        key,
+        flags=re.IGNORECASE,
+    )
 
 
 def source_link(provider: str, source_id: str, album_id: str = ""):
@@ -373,7 +381,8 @@ def fetch_kugou_catalog(name: str):
 
 
 def merge_catalog_results(name: str, results: dict, errors: dict):
-    provider_order = ("qq", "netease", "kugou")
+    # Keep NetEase metadata when the same song appears on multiple platforms.
+    provider_order = ("netease", "qq", "kugou")
     merged = {}
     profile = None
     albums = []
@@ -631,7 +640,7 @@ def tour_archive():
 def search_singer():
     name = request.args.get("name", "杨丞琳").strip() or "杨丞琳"
     now = int(time.time())
-    cache_key = f"multi-platform-v3:{name}"
+    cache_key = f"multi-platform-v4:{name}"
     cached = read_search_cache(cache_key)
 
     if cached and now - cached["updated_at"] < SEARCH_CACHE_TTL_SECONDS:
