@@ -179,6 +179,47 @@ updateTime();
 fetchTours(); 
 setInterval(updateTime, 1000);
 
+// Use the five newest images from Rainie Yang's personal Weibo as backgrounds.
+// Existing CSS backgrounds remain in place if the manifest cannot be loaded.
+async function loadWeiboBackgrounds() {
+  const slider = document.getElementById("bg-slider");
+  const slides = Array.from(document.querySelectorAll(".bg-slide"));
+  if (!slides.length) return;
+
+  try {
+    const response = await fetch("/static/data/gallery.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Gallery request failed: ${response.status}`);
+    const records = await response.json();
+    const imageUrls = records
+      .filter(item => item.source === "杨丞琳" && item.image)
+      .slice(0, slides.length)
+      .map(item => item.image);
+    const loadedImages = await Promise.all(imageUrls.map(url => new Promise(resolve => {
+      const image = new Image();
+      image.decoding = "async";
+      image.onload = () => resolve(url);
+      image.onerror = () => resolve("");
+      image.src = url;
+    })));
+    const availableImages = loadedImages.filter(Boolean);
+    if (!availableImages.length) return;
+
+    slides.forEach((slide, index) => {
+      slide.style.backgroundImage =
+        `url("${availableImages[index % availableImages.length]}")`;
+    });
+    slider.classList.add("weibo-ready");
+  } catch (error) {
+    console.error("微博轮播图片加载失败，继续使用纯色背景。", error);
+  }
+}
+
+if (document.readyState === "complete") {
+  loadWeiboBackgrounds();
+} else {
+  window.addEventListener("load", loadWeiboBackgrounds, { once: true });
+}
+
 // 鼠标滚轮横向滚动支持
 const slider = document.getElementById('tour-slider');
 const prevBtn = document.getElementById('prev-btn');

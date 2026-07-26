@@ -2,6 +2,7 @@ import sqlite3
 import datetime
 import time
 import base64
+import math
 import re
 import secrets
 import string
@@ -15,6 +16,7 @@ import json
 import logging
 from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
+from opencc import OpenCC
 
 # 复用或重新配置日志 (为了确保 app.py 也能打日志)
 logging.basicConfig(
@@ -34,6 +36,8 @@ TOURS_JSON_PATH = BASE_DIR / "db" / "tours.json"
 QQ_SEARCH_URL = "https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg"
 NETEASE_SEARCH_URL = "https://music.163.com/weapi/cloudsearch/pc"
 KUGOU_SEARCH_URL = "https://songsearch.kugou.com/song_search_v2"
+SPOTIFY_PROXY_URL = "https://api.t4ils.dev"
+SPOTIFY_RAINIE_ARTIST_ID = "0MEchSWR9pJvw1S5CV3Kuk"
 SEARCH_CACHE_TTL_SECONDS = 12 * 60 * 60
 LYRICS_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60
 NETEASE_AES_IV = b"0102030405060708"
@@ -43,6 +47,73 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7cl
 -----END PUBLIC KEY-----"""
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
+SIMPLIFIED_CONVERTER = OpenCC("t2s")
+
+TRADITIONAL_TITLE_MAP = str.maketrans({
+    "愛": "爱",
+    "曖": "暧",
+    "說": "说",
+    "輪": "轮",
+    "邊": "边",
+    "誰": "谁",
+    "眾": "众",
+    "戀": "恋",
+    "煩": "烦",
+    "惱": "恼",
+    "懷": "怀",
+    "個": "个",
+    "帶": "带",
+    "們": "们",
+    "觀": "观",
+    "點": "点",
+    "啟": "启",
+    "憶": "忆",
+    "魚": "鱼",
+    "顆": "颗",
+    "裡": "里",
+    "體": "体",
+    "無": "无",
+    "須": "须",
+    "歸": "归",
+    "車": "车",
+    "風": "风",
+    "過": "过",
+    "開": "开",
+    "樣": "样",
+    "見": "见",
+    "單": "单",
+    "習": "习",
+    "慣": "惯",
+    "顏": "颜",
+    "雙": "双",
+    "戲": "戏",
+    "掛": "挂",
+    "轉": "转",
+    "彎": "弯",
+    "擁": "拥",
+    "實": "实",
+    "劇": "剧",
+    "鍾": "钟",
+    "戰": "战",
+    "聽": "听",
+    "離": "离",
+    "動": "动",
+    "園": "园",
+    "歲": "岁",
+    "為": "为",
+    "與": "与",
+    "從": "从",
+    "這": "这",
+    "麼": "么",
+    "時": "时",
+    "還": "还",
+    "讓": "让",
+    "對": "对",
+    "夢": "梦",
+    "樂": "乐",
+    "極": "极",
+    "選": "选",
+})
 
 
 def build_fallback_search_payload(name: str):
@@ -119,7 +190,15 @@ def build_fallback_search_payload(name: str):
 
 
 def compact_song_key(name: str):
-    key = re.sub(r"[\s·・]+", "", name or "").casefold()
+    normalized = SIMPLIFIED_CONVERTER.convert(name or "")
+    # Streaming services often append soundtrack descriptions after the title.
+    normalized = re.sub(
+        r"\s*[-–—]\s*(?:电视剧|电视连续剧|电影|网剧|综艺|动画).*?$",
+        "",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+    key = re.sub(r"[\s·•・]+", "", normalized).casefold()
     # Different providers commonly append equivalent live markers to the title.
     # Treat these as the same catalog song so the preferred provider can win.
     return re.sub(
@@ -138,11 +217,18 @@ def source_link(provider: str, source_id: str, album_id: str = ""):
     if provider == "kugou":
         query = urllib.parse.urlencode({"hash": source_id, "album_id": album_id})
         return f"https://www.kugou.com/song/?{query}"
+    if provider == "spotify":
+        return f"https://open.spotify.com/track/{source_id}"
     return ""
 
 
 def make_source(provider: str, source_id: str, album_id: str = ""):
-    labels = {"qq": "QQ音乐", "netease": "网易云", "kugou": "酷狗"}
+    labels = {
+        "qq": "QQ音乐",
+        "netease": "网易云",
+        "kugou": "酷狗",
+        "spotify": "Spotify",
+    }
     return {
         "provider": provider,
         "label": labels[provider],
@@ -255,7 +341,7 @@ def fetch_netease_catalog(name: str):
     encrypted = netease_encrypt_payload({
         "s": name,
         "type": 1,
-        "limit": 30,
+        "limit": 100,
         "offset": 0,
         "total": True,
     })
@@ -316,7 +402,7 @@ def fetch_kugou_catalog(name: str):
     query = urllib.parse.urlencode({
         "keyword": name,
         "page": 1,
-        "pagesize": 30,
+        "pagesize": 100,
         "userid": -1,
         "platform": "WebFilter",
         "filter": 2,
@@ -380,9 +466,255 @@ def fetch_kugou_catalog(name: str):
     return {"provider": "kugou", "songs": songs}
 
 
+def fetch_spotify_json(path: str, timeout: int = 25):
+    req = urllib.request.Request(
+        f"{SPOTIFY_PROXY_URL}{path}",
+        headers={
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (compatible; RainieStation/1.0)",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if not payload.get("success"):
+        raise ValueError("Spotify proxy returned an unsuccessful response")
+    return payload
+
+
+def fetch_spotify_catalog(name: str):
+    normalized_name = compact_song_key(name)
+    if normalized_name not in {
+        compact_song_key("杨丞琳"),
+        compact_song_key("Rainie Yang"),
+    }:
+        raise ValueError("Spotify provider is currently configured for Rainie Yang only")
+
+    artist_payload = fetch_spotify_json(
+        f"/getArtist?id={SPOTIFY_RAINIE_ARTIST_ID}",
+        timeout=35,
+    )
+    artist = artist_payload.get("data", {}).get("data", {}).get("artistUnion", {})
+    discography = artist.get("discography", {})
+    album_ids = []
+    for section_name in ("popularReleasesAlbums", "albums", "singles"):
+        for item in discography.get(section_name, {}).get("items", []):
+            releases = item.get("releases", {}).get("items", [])
+            candidates = releases or [item]
+            for album in candidates:
+                album_id = album.get("id")
+                if album_id and album_id not in album_ids:
+                    album_ids.append(album_id)
+
+    if not album_ids:
+        raise ValueError("Spotify returned no Rainie Yang releases")
+
+    album_results = []
+    album_errors = []
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = {
+            executor.submit(
+                fetch_spotify_json,
+                f"/getAlbum?id={urllib.parse.quote(album_id)}",
+                20,
+            ): album_id
+            for album_id in album_ids[:30]
+        }
+        for future in as_completed(futures):
+            try:
+                album_results.append(future.result())
+            except Exception as exc:
+                album_errors.append(f"{futures[future]}: {exc}")
+
+    songs_by_key = {}
+    for payload in album_results:
+        album = payload.get("data", {}).get("data", {}).get("albumUnion", {})
+        album_artists = album.get("artists", {}).get("items") or []
+        if album_artists and not any(
+            artist.get("id") == SPOTIFY_RAINIE_ARTIST_ID
+            or compact_song_key(artist.get("profile", {}).get("name") or "")
+            == compact_song_key("Rainie Yang")
+            for artist in album_artists
+        ):
+            continue
+        album_name = album.get("name") or ""
+        for item in album.get("tracks", {}).get("items", []):
+            track = item.get("track", {})
+            track_uri = track.get("uri") or ""
+            track_id = track_uri.rsplit(":", 1)[-1] if track_uri else ""
+            song_name = track.get("name") or ""
+            if not track_id or not song_name:
+                continue
+            try:
+                playcount = int(track.get("playcount") or 0)
+            except (TypeError, ValueError):
+                playcount = 0
+            duration_ms = track.get("duration", {}).get("totalMilliseconds") or 0
+            cover_sources = album.get("coverArt", {}).get("sources") or [{}]
+            song = {
+                "songmid": f"spotify_{track_id}",
+                "songname": SIMPLIFIED_CONVERTER.convert(song_name),
+                "albumname": SIMPLIFIED_CONVERTER.convert(album_name),
+                "time_public": album.get("date", {}).get("isoString") or "",
+                "source": "spotify",
+                "sources": [make_source("spotify", track_id, album.get("id") or "")],
+                "duration_seconds": round(duration_ms / 1000) if duration_ms else None,
+                "aliases": [],
+                "qualities": [],
+                "has_mv": False,
+                "cover_url": cover_sources[0].get("url") or "",
+                "popularity": None,
+                "heat_level": None,
+                "owner_count": None,
+                "spotify_playcount": playcount,
+                "singer": [{"name": "Rainie Yang", "mid": SPOTIFY_RAINIE_ARTIST_ID}],
+            }
+            key = compact_song_key(song_name)
+            current = songs_by_key.get(key)
+            if not current or playcount > current.get("spotify_playcount", 0):
+                songs_by_key[key] = song
+
+    if not songs_by_key:
+        detail = "; ".join(album_errors[:3])
+        raise ValueError(f"Spotify returned no usable tracks: {detail}")
+    return {"provider": "spotify", "songs": list(songs_by_key.values())}
+
+
+def percentile_score(value, values, log_scale=False):
+    if value is None or not values:
+        return None
+    clean_values = [max(0, float(item)) for item in values if item is not None]
+    if not clean_values:
+        return None
+    current = max(0, float(value))
+    if log_scale:
+        clean_values = [math.log10(item + 1) for item in clean_values]
+        current = math.log10(current + 1)
+    ordered = sorted(clean_values)
+    less = sum(1 for item in ordered if item < current)
+    equal = sum(1 for item in ordered if item == current)
+    percentile = (less + equal * 0.5) / len(ordered)
+    return round(max(0, min(100, percentile * 100)), 1)
+
+
+def apply_composite_scores(songs):
+    spotify_songs = [
+        song for song in songs
+        if song.get("spotify_playcount") is not None
+    ]
+    spotify_songs.sort(
+        key=lambda song: song.get("spotify_playcount") or 0,
+        reverse=True,
+    )
+    for rank, song in enumerate(spotify_songs, start=1):
+        song.pop("composite_rank", None)
+        song.pop("composite_score", None)
+        song["spotify_rank"] = rank
+        song["ranking_source"] = "spotify_playcount"
+    return spotify_songs[:50]
+
+
+def _legacy_apply_composite_scores(songs):
+    netease_values = [
+        song.get("popularity") for song in songs if song.get("popularity") is not None
+    ]
+    kugou_owner_values = [
+        song.get("owner_count") for song in songs if song.get("owner_count") is not None
+    ]
+    kugou_heat_values = [
+        song.get("heat_level") for song in songs if song.get("heat_level") is not None
+    ]
+    spotify_values = [
+        song.get("spotify_playcount")
+        for song in songs
+        if song.get("spotify_playcount") is not None
+    ]
+    base_weights = {"netease": 0.20, "kugou": 0.50, "spotify": 0.30}
+
+    for song in songs:
+        song.pop("composite_rank", None)
+        netease_score = percentile_score(song.get("popularity"), netease_values)
+        owner_score = percentile_score(
+            song.get("owner_count"),
+            kugou_owner_values,
+            log_scale=True,
+        )
+        heat_score = percentile_score(song.get("heat_level"), kugou_heat_values)
+        kugou_parts = [score for score in (owner_score, heat_score) if score is not None]
+        kugou_score = (
+            round(
+                (owner_score * 0.85 + heat_score * 0.15)
+                if owner_score is not None and heat_score is not None
+                else sum(kugou_parts) / len(kugou_parts),
+                1,
+            )
+            if kugou_parts
+            else None
+        )
+        spotify_score = percentile_score(
+            song.get("spotify_playcount"),
+            spotify_values,
+            log_scale=True,
+        )
+        platform_scores = {
+            "qq": None,
+            "netease": netease_score,
+            "kugou": kugou_score,
+            "spotify": spotify_score,
+            "apple_music": None,
+        }
+        weighted = [
+            (platform_scores[provider], weight)
+            for provider, weight in base_weights.items()
+            if platform_scores[provider] is not None
+        ]
+        weight_total = sum(weight for _, weight in weighted)
+        raw_composite_score = (
+            round(sum(score * weight for score, weight in weighted) / weight_total, 1)
+            if weight_total
+            else None
+        )
+        score_coverage = len(weighted) / len(base_weights)
+        composite_score = (
+            round(50 + (raw_composite_score - 50) * score_coverage, 1)
+            if (
+                raw_composite_score is not None
+                and song.get("owner_count") is not None
+                and song.get("spotify_playcount") is not None
+            )
+            else None
+        )
+        song["platform_scores"] = platform_scores
+        song["composite_score"] = composite_score
+        song["score_platform_count"] = sum(
+            score is not None for score in platform_scores.values()
+        )
+        song["score_platform_total"] = 5
+        song["score_coverage"] = round(score_coverage, 2)
+        song["score_version"] = "v2-kugou-focused"
+        song["ranking_source"] = "weighted_composite"
+
+    songs.sort(
+        key=lambda song: (
+            song.get("composite_score") is not None,
+            song.get("composite_score") or 0,
+            song.get("spotify_playcount") is not None,
+            song.get("owner_count") is not None,
+            song.get("owner_count") or 0,
+            song.get("spotify_playcount") or 0,
+        ),
+        reverse=True,
+    )
+    ranked_songs = [
+        song for song in songs if song.get("composite_score") is not None
+    ]
+    for rank, song in enumerate(ranked_songs, start=1):
+        song["composite_rank"] = rank
+    return songs
+
+
 def merge_catalog_results(name: str, results: dict, errors: dict):
     # Keep NetEase metadata when the same song appears on multiple platforms.
-    provider_order = ("netease", "qq", "kugou")
+    provider_order = ("netease", "qq", "kugou", "spotify")
     merged = {}
     profile = None
     albums = []
@@ -419,6 +751,7 @@ def merge_catalog_results(name: str, results: dict, errors: dict):
                 "popularity",
                 "heat_level",
                 "owner_count",
+                "spotify_playcount",
             ):
                 if existing.get(field) is None or existing.get(field) == "":
                     if song.get(field) is not None and song.get(field) != "":
@@ -431,7 +764,7 @@ def merge_catalog_results(name: str, results: dict, errors: dict):
                 (existing.get("qualities") or []) + (song.get("qualities") or [])
             ))
 
-    songs = list(merged.values())
+    songs = apply_composite_scores(list(merged.values()))
     if not songs:
         raise ValueError("No music provider returned usable results")
 
@@ -478,6 +811,7 @@ def fetch_aggregated_search_payload(name: str):
         "qq": fetch_qq_catalog,
         "netease": fetch_netease_catalog,
         "kugou": fetch_kugou_catalog,
+        "spotify": fetch_spotify_catalog,
     }
     results = {}
     errors = {}
@@ -616,6 +950,11 @@ def init_db():
 @app.get("/")
 def index():
     return send_from_directory(app.static_folder, "index.html")
+
+# 图片库
+@app.get("/gallery")
+def gallery_archive():
+    return send_from_directory(app.static_folder, "gallery.html")
 
 # 音乐统计页
 @app.get("/music")

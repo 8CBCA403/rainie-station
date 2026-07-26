@@ -7,11 +7,23 @@
     <link rel="icon" type="image/png" href="/static/img/1.png" />
     <link rel="stylesheet" href="/static/css/desktop.css?v=12" />
     <link rel="stylesheet" href="/static/css/mobile.css?v=2" />
+    <style>
+      #bg-slider {
+        opacity: 0 !important;
+        background: #080b14;
+        transition: opacity 0.8s ease;
+      }
+      #bg-slider.weibo-ready {
+        opacity: 1 !important;
+      }
+    </style>
   </head>
 
   <body>
     <!-- 动态背景轮播 -->
     <div id="bg-slider">
+      <div class="bg-slide"></div>
+      <div class="bg-slide"></div>
       <div class="bg-slide"></div>
       <div class="bg-slide"></div>
       <div class="bg-slide"></div>
@@ -145,6 +157,6 @@
         </div>
     </div>
 
-    <script src="/static/js/stats.js"></script>
+    <script src="/static/js/stats.js?v=4"></script>
   </body>
 </html>

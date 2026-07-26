@@ -52,10 +52,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initial load
+    loadMusicPageWeiboBackgrounds();
     searchSinger("杨丞琳");
 });
 
 let originalHotSongs = [];
+
+async function loadMusicPageWeiboBackgrounds() {
+    const slider = document.getElementById('bg-slider');
+    const slides = Array.from(document.querySelectorAll('#bg-slider .bg-slide'));
+    if (!slider || !slides.length) return;
+
+    try {
+        const response = await fetch('/static/data/gallery.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Gallery request failed: ${response.status}`);
+        const records = await response.json();
+        const images = records
+            .filter(item => item.source === '杨丞琳' && item.image)
+            .slice(0, slides.length)
+            .map(item => item.image);
+        if (!images.length) return;
+
+        const loadedImages = await Promise.all(images.map(url => new Promise(resolve => {
+                const image = new Image();
+                image.decoding = 'async';
+                image.onload = () => resolve(url);
+                image.onerror = () => resolve('');
+                image.src = url;
+        })));
+        const availableImages = loadedImages.filter(Boolean);
+        if (!availableImages.length) return;
+
+        slides.forEach((slide, index) => {
+            const url = availableImages[index % availableImages.length];
+            slide.style.backgroundImage = `url('${url}')`;
+        });
+        slider.classList.add('weibo-ready');
+    } catch (error) {
+        console.error('Music Archive 微博背景加载失败，继续使用纯色背景。', error);
+    }
+}
 
 async function searchSinger(name) {
     const songListEl = document.getElementById('song-list');
@@ -408,7 +444,9 @@ function renderSongs(songs, statsMap, options = {}) {
         let pubTime = song.pubtime || song.time_public || song.pub_time || (song.album ? song.album.time_public : '-') || '-';
 
         // 3. 时间格式化：支持时间戳转换
-        if (/^\d+$/.test(pubTime)) {
+        if (/^\d{4}-\d{2}-\d{2}(?:T.*)?$/.test(String(pubTime))) {
+            pubTime = String(pubTime).slice(0, 10);
+        } else if (/^\d+$/.test(pubTime)) {
             // 如果是 10 位时间戳 (秒)，转毫秒
             if (String(pubTime).length === 10) {
                  pubTime = pubTime * 1000;
@@ -448,6 +486,11 @@ function renderSongs(songs, statsMap, options = {}) {
                     💿 ${escapeHtml(albumName)}
                     <span style="opacity:0.4; margin:0 5px;">|</span>
                     📅 ${escapeHtml(pubTime.toString().includes('-') ? pubTime : (pubTime == '-' ? '-' : new Date(pubTime).getFullYear()))}
+                </div>
+                <div style="margin-top:8px;">
+                    <span id="song-credit-${index}">✍️ 词曲：加载中...</span>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px;">
                     ${sourceBadges}
                 </div>
             </div>
@@ -481,18 +524,21 @@ function renderSongs(songs, statsMap, options = {}) {
             const qualities = (song.qualities || []).filter(Boolean);
             const sourceCount = (song.sources || []).length;
             const metricItems = [
+                song.spotify_playcount !== null && song.spotify_playcount !== undefined
+                    ? `<span style="color:#ff9f43; font-size:1.12rem; font-weight:700;">▶ Spotify播放 ${Number(song.spotify_playcount).toLocaleString()}</span>`
+                    : '',
                 `<span>⏱ ${escapeHtml(duration)}</span>`,
                 `<span>🌐 ${sourceCount} 个平台</span>`,
                 song.has_mv ? '<span>🎬 有 MV</span>' : '',
                 song.heat_level !== null && song.heat_level !== undefined
-                    ? `<span>🔥 热度 ${escapeHtml(song.heat_level)}</span>`
+                    ? `<span>🔥 酷狗热度 ${escapeHtml(song.heat_level)}</span>`
                     : '',
                 song.owner_count
-                    ? `<span>❤️ 收藏 ${Number(song.owner_count).toLocaleString()}</span>`
+                    ? `<span>❤️ 酷狗收藏 ${Number(song.owner_count).toLocaleString()}</span>`
                     : '',
                 song.popularity
-                    ? `<span>📈 人气 ${escapeHtml(song.popularity)}</span>`
-                    : ''
+                    ? `<span>📈 网易云人气 ${escapeHtml(song.popularity)}</span>`
+                    : '',
             ].filter(Boolean);
 
             if (dataEl) {
@@ -533,6 +579,7 @@ function renderSongs(songs, statsMap, options = {}) {
                 `;
             }
         });
+        loadSongCredits(songs);
         return;
     }
 
@@ -540,6 +587,54 @@ function renderSongs(songs, statsMap, options = {}) {
     // 服务器性能较弱 (2核2G)，必须限制并发为 1，否则 5 个浏览器实例会撑爆内存
     const CONCURRENT_LIMIT = 1;
     processQueue(songs, CONCURRENT_LIMIT);
+}
+
+function extractSongCredits(rawLyric = '') {
+    let lyricist = '';
+    let composer = '';
+    const timeReg = /\[\d{2}:\d{2}(?:\.\d{1,3})?\]/g;
+
+    rawLyric.split('\n').forEach(line => {
+        const cleanLine = line
+            .replace(timeReg, '')
+            .replace(/\[(?:ti|ar|al|by|offset):.*?\]/gi, '')
+            .trim();
+        const lyricistMatch = cleanLine.match(/^(?:作?词|填词)\s*[:：]\s*(.+)$/);
+        const composerMatch = cleanLine.match(/^(?:作?曲|谱曲)\s*[:：]\s*(.+)$/);
+        if (!lyricist && lyricistMatch) lyricist = lyricistMatch[1].trim();
+        if (!composer && composerMatch) composer = composerMatch[1].trim();
+    });
+
+    return { lyricist, composer };
+}
+
+async function loadSongCredits(songs) {
+    let nextIndex = 0;
+    const worker = async () => {
+        while (nextIndex < songs.length) {
+            const index = nextIndex++;
+            const song = songs[index];
+            const creditEl = document.getElementById(`song-credit-${index}`);
+            if (!creditEl) continue;
+
+            const songmid = song.songmid || song.mid;
+            const sources = song.sources || [];
+            try {
+                const url = `/api/lyrics?mid=${encodeURIComponent(songmid)}&sources=${encodeURIComponent(JSON.stringify(sources))}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                const credits = extractSongCredits(data.lyric || data.lyrics || '');
+                const parts = [];
+                if (credits.lyricist) parts.push(`作词：${credits.lyricist}`);
+                if (credits.composer) parts.push(`作曲：${credits.composer}`);
+                creditEl.textContent = parts.length ? `✍️ ${parts.join(' · ')}` : '✍️ 词曲：暂无';
+            } catch (error) {
+                creditEl.textContent = '✍️ 词曲：暂无';
+            }
+        }
+    };
+
+    await Promise.all(Array.from({ length: Math.min(4, songs.length) }, worker));
 }
 
 // 带并发限制的队列处理
@@ -793,7 +888,13 @@ function renderLyrics(data, container) {
         const metaItems = [];
         if (lyricist) metaItems.push(`作词：${escapeHtml(lyricist)}`);
         if (composer) metaItems.push(`作曲：${escapeHtml(composer)}`);
-        const providerNames = { netease: '网易云', qq: 'QQ 音乐', kugou: '酷狗' };
+        const providerNames = {
+            netease: '网易云',
+            qq: 'QQ 音乐',
+            kugou: '酷狗',
+            spotify: 'Spotify',
+            apple_music: 'Apple Music'
+        };
         const sourceName = providerNames[data.provider] || '';
         if (sourceName) {
             metaItems.push(`歌词来源：${escapeHtml(sourceName)}${data.cached ? '（缓存）' : ''}`);
