@@ -422,6 +422,17 @@ function renderSongs(songs, statsMap, options = {}) {
         // 获取 songmid
         const songmid = song.songmid || song.mid;
         const singerName = (song.singer && song.singer.length > 0) ? song.singer[0].name : "杨丞琳";
+        const sourceBadges = (song.sources || []).map(source => `
+            <a href="${escapeHtml(source.url)}"
+               target="_blank"
+               rel="noopener noreferrer"
+               onclick="event.stopPropagation();"
+               style="display:inline-flex; align-items:center; padding:2px 7px; margin-left:5px;
+                      border-radius:999px; background:rgba(79,172,254,0.12);
+                      color:#8bc8ff; font-size:0.68rem; text-decoration:none;">
+                ${escapeHtml(source.label)}
+            </a>
+        `).join('');
 
         // Add click event for lyrics
         div.onclick = () => fetchLyrics(songmid, songName, singerName);
@@ -437,6 +448,7 @@ function renderSongs(songs, statsMap, options = {}) {
                     💿 ${escapeHtml(albumName)}
                     <span style="opacity:0.4; margin:0 5px;">|</span>
                     📅 ${escapeHtml(pubTime.toString().includes('-') ? pubTime : (pubTime == '-' ? '-' : new Date(pubTime).getFullYear()))}
+                    ${sourceBadges}
                 </div>
             </div>
 

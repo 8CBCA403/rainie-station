@@ -1,6 +1,11 @@
 import sqlite3
 import datetime
 import time
+import base64
+import re
+import secrets
+import string
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from flask import Flask, send_from_directory, jsonify, request
 import urllib.request
@@ -8,6 +13,8 @@ import urllib.parse
 import json
 
 import logging
+from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
 
 # 复用或重新配置日志 (为了确保 app.py 也能打日志)
 logging.basicConfig(
@@ -25,7 +32,14 @@ DB_PATH = BASE_DIR / "db" / "room64.db"
 SCHEMA_PATH = BASE_DIR / "db" / "schema.sql"
 TOURS_JSON_PATH = BASE_DIR / "db" / "tours.json"
 QQ_SEARCH_URL = "https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg"
+NETEASE_SEARCH_URL = "https://music.163.com/weapi/cloudsearch/pc"
+KUGOU_SEARCH_URL = "https://songsearch.kugou.com/song_search_v2"
 SEARCH_CACHE_TTL_SECONDS = 12 * 60 * 60
+NETEASE_AES_IV = b"0102030405060708"
+NETEASE_PRESET_KEY = b"0CoJUm6Qyw8W8jud"
+NETEASE_PUBLIC_KEY = b"""-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7clFSs6sXqHauqKWqdtLkF2KexO40H1YTX8z2lSgBBOAxLsvaklV8k4cBFK9snQXE9/DDaFt6Rr7iVZMldczhC0JNgTz+SHXT6CBHuX3e9SdB1Ua44oncaTWz7OBGLbCiK45wIDAQAB
+-----END PUBLIC KEY-----"""
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
@@ -103,12 +117,50 @@ def build_fallback_search_payload(name: str):
     }
 
 
-def normalize_qq_search_payload(name: str, source_data: dict):
-    """Convert QQ Music smartbox data to the structure used by the music page."""
+def compact_song_key(name: str):
+    return re.sub(r"[\s·・]+", "", name or "").casefold()
+
+
+def source_link(provider: str, source_id: str, album_id: str = ""):
+    if provider == "qq":
+        return f"https://y.qq.com/n/ryqq/songDetail/{source_id}"
+    if provider == "netease":
+        return f"https://music.163.com/#/song?id={source_id}"
+    if provider == "kugou":
+        query = urllib.parse.urlencode({"hash": source_id, "album_id": album_id})
+        return f"https://www.kugou.com/song/?{query}"
+    return ""
+
+
+def make_source(provider: str, source_id: str, album_id: str = ""):
+    labels = {"qq": "QQ音乐", "netease": "网易云", "kugou": "酷狗"}
+    return {
+        "provider": provider,
+        "label": labels[provider],
+        "id": str(source_id),
+        "url": source_link(provider, str(source_id), str(album_id or "")),
+    }
+
+
+def fetch_qq_catalog(name: str):
     fallback = build_fallback_search_payload(name)
     fallback_songs = fallback["data"]["song"]["list"]
     fallback_by_name = {song["songname"]: song for song in fallback_songs}
 
+    query = urllib.parse.urlencode({"key": name, "format": "json"})
+    req = urllib.request.Request(
+        f"{QQ_SEARCH_URL}?{query}",
+        headers={
+            "Referer": "https://y.qq.com/",
+            "User-Agent": "Mozilla/5.0",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=8) as response:
+        raw = json.loads(response.read().decode("utf-8"))
+    if raw.get("code") != 0 or not raw.get("data"):
+        raise ValueError("QQ Music search returned no usable data")
+
+    source_data = raw["data"]
     singer_items = source_data.get("singer", {}).get("itemlist", [])
     song_items = source_data.get("song", {}).get("itemlist", [])
     album_items = source_data.get("album", {}).get("itemlist", [])
@@ -131,42 +183,270 @@ def normalize_qq_search_payload(name: str, source_data: dict):
         song.update({
             "songmid": song_mid,
             "songname": song_name,
+            "source": "qq",
+            "sources": [make_source("qq", song_mid)],
             "singer": [{
                 "name": item.get("singer") or singer_name,
                 "mid": singer_mid,
             }],
         })
         songs.append(song)
-        seen_names.add(song_name)
+        seen_names.add(compact_song_key(song_name))
 
-    # Keep curated representative songs so the page remains useful when the
-    # public search endpoint returns only a small suggestion list.
-    for song in fallback_songs:
-        if song["songname"] not in seen_names:
-            songs.append(song)
+    return {
+        "provider": "qq",
+        "songs": songs,
+        "profile": {
+            "singerName": singer_name,
+            "singerPic": singer_pic,
+            "songNum": source_data.get("song", {}).get("count", len(songs)),
+            "albumNum": source_data.get("album", {}).get("count", len(album_items)),
+            "mvNum": source_data.get("mv", {}).get("count", len(mv_items)),
+        },
+        "albums": album_items,
+    }
+
+
+def netease_aes_encrypt(data: bytes, key: bytes):
+    padding_length = 16 - len(data) % 16
+    padded = data + bytes([padding_length]) * padding_length
+    encrypted = AES.new(key, AES.MODE_CBC, NETEASE_AES_IV).encrypt(padded)
+    return base64.b64encode(encrypted).decode("ascii")
+
+
+def netease_encrypt_payload(payload: dict):
+    secret_key = "".join(
+        secrets.choice(string.ascii_letters + string.digits) for _ in range(16)
+    ).encode("ascii")
+    serialized = json.dumps(
+        payload, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    first_pass = netease_aes_encrypt(serialized, NETEASE_PRESET_KEY).encode("ascii")
+    params = netease_aes_encrypt(first_pass, secret_key)
+    public_key = RSA.import_key(NETEASE_PUBLIC_KEY)
+    encrypted_key = pow(
+        int.from_bytes(secret_key[::-1], "big"),
+        public_key.e,
+        public_key.n,
+    )
+    return {
+        "params": params,
+        "encSecKey": format(encrypted_key, "0256x"),
+    }
+
+
+def fetch_netease_catalog(name: str):
+    encrypted = netease_encrypt_payload({
+        "s": name,
+        "type": 1,
+        "limit": 30,
+        "offset": 0,
+        "total": True,
+    })
+    req = urllib.request.Request(
+        NETEASE_SEARCH_URL,
+        data=urllib.parse.urlencode(encrypted).encode("utf-8"),
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Referer": "https://music.163.com/",
+            "User-Agent": "Mozilla/5.0",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=12) as response:
+        raw = json.loads(response.read().decode("utf-8"))
+    if raw.get("code") != 200:
+        raise ValueError("NetEase Cloud Music search failed")
+
+    songs = []
+    for item in raw.get("result", {}).get("songs", []):
+        artists = item.get("ar") or item.get("artists") or []
+        artist_names = [artist.get("name", "") for artist in artists]
+        if name not in "/".join(artist_names):
+            continue
+        album = item.get("al") or item.get("album") or {}
+        publish_time = album.get("publishTime")
+        date_text = ""
+        if publish_time:
+            date_text = datetime.datetime.fromtimestamp(
+                publish_time / 1000
+            ).strftime("%Y-%m-%d")
+        source_id = str(item.get("id"))
+        songs.append({
+            "songmid": f"netease_{source_id}",
+            "songname": item.get("name"),
+            "albumname": album.get("name") or "",
+            "time_public": date_text,
+            "source": "netease",
+            "sources": [make_source("netease", source_id)],
+            "singer": [{"name": artist, "mid": ""} for artist in artist_names],
+        })
+    if not songs:
+        raise ValueError("NetEase returned no matching artist results")
+    return {"provider": "netease", "songs": songs}
+
+
+def fetch_kugou_catalog(name: str):
+    query = urllib.parse.urlencode({
+        "keyword": name,
+        "page": 1,
+        "pagesize": 30,
+        "userid": -1,
+        "platform": "WebFilter",
+        "filter": 2,
+        "iscorrection": 1,
+        "privilege_filter": 0,
+    })
+    req = urllib.request.Request(
+        f"{KUGOU_SEARCH_URL}?{query}",
+        headers={
+            "Referer": "https://www.kugou.com/",
+            "User-Agent": "Mozilla/5.0",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=10) as response:
+        raw = json.loads(response.read().decode("utf-8"))
+    if raw.get("status") != 1:
+        raise ValueError("KuGou Music search failed")
+
+    songs = []
+    for item in raw.get("data", {}).get("lists", []):
+        singer_name = item.get("SingerName") or ""
+        if name not in singer_name:
+            continue
+        source_id = item.get("FileHash") or item.get("MixSongID")
+        if not source_id:
+            continue
+        album_id = item.get("AlbumID") or ""
+        songs.append({
+            "songmid": f"kugou_{source_id}",
+            "songname": item.get("SongName"),
+            "albumname": item.get("AlbumName") or "",
+            "time_public": item.get("PublishDate") or "",
+            "source": "kugou",
+            "sources": [make_source("kugou", source_id, album_id)],
+            "singer": [{"name": singer_name, "mid": ""}],
+        })
+    if not songs:
+        raise ValueError("KuGou returned no matching artist results")
+    return {"provider": "kugou", "songs": songs}
+
+
+def merge_catalog_results(name: str, results: dict, errors: dict):
+    provider_order = ("qq", "netease", "kugou")
+    merged = {}
+    profile = None
+    albums = []
+
+    for provider in provider_order:
+        result = results.get(provider)
+        if not result:
+            continue
+        if result.get("profile"):
+            profile = result["profile"]
+        if result.get("albums"):
+            albums = result["albums"]
+
+        for song in result["songs"]:
+            song_name = song.get("songname") or ""
+            key = compact_song_key(song_name)
+            if not key:
+                continue
+            if key not in merged:
+                merged[key] = song
+                continue
+
+            existing = merged[key]
+            known = {source["provider"] for source in existing.get("sources", [])}
+            for source in song.get("sources", []):
+                if source["provider"] not in known:
+                    existing.setdefault("sources", []).append(source)
+            for field in ("albumname", "albummid", "time_public"):
+                if not existing.get(field) and song.get(field):
+                    existing[field] = song[field]
+
+    songs = list(merged.values())
+    if not songs:
+        raise ValueError("No music provider returned usable results")
+
+    if not profile:
+        profile = {
+            "singerName": name,
+            "singerPic": "",
+            "songNum": len(songs),
+            "albumNum": len({
+                song.get("albumname") for song in songs if song.get("albumname")
+            }),
+            "mvNum": 0,
+        }
+    else:
+        profile["songNum"] = len(songs)
+        profile["albumNum"] = max(
+            profile.get("albumNum", 0),
+            len({song.get("albumname") for song in songs if song.get("albumname")}),
+        )
 
     return {
         "code": 0,
         "data": {
             "_fallback": False,
             "_skip_index": True,
-            "_source": "qq_music",
-            "zhida": {
-                "zhida_singer": {
-                    "singerName": singer_name,
-                    "singerPic": singer_pic,
-                    "songNum": max(len(songs), source_data.get("song", {}).get("count", 0)),
-                    "albumNum": max(
-                        len({song.get("albummid") for song in songs if song.get("albummid")}),
-                        source_data.get("album", {}).get("count", 0),
-                    ),
-                    "mvNum": source_data.get("mv", {}).get("count", len(mv_items)),
+            "_source": "multi_platform",
+            "_providers": {
+                provider: {
+                    "ok": provider in results,
+                    "count": len(results.get(provider, {}).get("songs", [])),
+                    "error": errors.get(provider, ""),
                 }
+                for provider in provider_order
             },
+            "zhida": {"zhida_singer": profile},
             "song": {"list": songs},
-            "album": {"list": album_items},
+            "album": {"list": albums},
         },
     }
+
+
+def fetch_aggregated_search_payload(name: str):
+    fetchers = {
+        "qq": fetch_qq_catalog,
+        "netease": fetch_netease_catalog,
+        "kugou": fetch_kugou_catalog,
+    }
+    results = {}
+    errors = {}
+    now = int(time.time())
+    stale_provider_cache = {}
+    pending_fetchers = {}
+
+    for provider, fetcher in fetchers.items():
+        cache_key = f"provider-v1:{provider}:{name}"
+        cached = read_search_cache(cache_key)
+        if cached and now - cached["updated_at"] < SEARCH_CACHE_TTL_SECONDS:
+            results[provider] = cached["payload"]
+        else:
+            if cached:
+                stale_provider_cache[provider] = cached["payload"]
+            pending_fetchers[provider] = fetcher
+
+    with ThreadPoolExecutor(max_workers=len(fetchers)) as executor:
+        futures = {
+            executor.submit(fetcher, name): provider
+            for provider, fetcher in pending_fetchers.items()
+        }
+        for future in as_completed(futures):
+            provider = futures[future]
+            try:
+                result = future.result()
+                results[provider] = result
+                write_search_cache(f"provider-v1:{provider}:{name}", result)
+            except Exception as exc:
+                if provider in stale_provider_cache:
+                    results[provider] = stale_provider_cache[provider]
+                    errors[provider] = f"using stale provider cache: {exc}"
+                else:
+                    errors[provider] = str(exc)
+                logger.warning(f"{provider} search failed for {name}: {exc}")
+    return merge_catalog_results(name, results, errors)
 
 
 def read_search_cache(query: str):
@@ -200,23 +480,6 @@ def write_search_cache(query: str, payload: dict):
     con.commit()
     con.close()
     return updated_at
-
-
-def fetch_qq_search_payload(name: str):
-    query = urllib.parse.urlencode({"key": name, "format": "json"})
-    req = urllib.request.Request(
-        f"{QQ_SEARCH_URL}?{query}",
-        headers={
-            "Referer": "https://y.qq.com/",
-            "User-Agent": "Mozilla/5.0",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=6) as response:
-        raw = json.loads(response.read().decode("utf-8"))
-
-    if raw.get("code") != 0 or not raw.get("data"):
-        raise ValueError("QQ Music search returned no usable data")
-    return normalize_qq_search_payload(name, raw["data"])
 
 
 def get_db_connection():
@@ -310,7 +573,8 @@ def tour_archive():
 def search_singer():
     name = request.args.get("name", "杨丞琳").strip() or "杨丞琳"
     now = int(time.time())
-    cached = read_search_cache(name)
+    cache_key = f"multi-platform-v2:{name}"
+    cached = read_search_cache(cache_key)
 
     if cached and now - cached["updated_at"] < SEARCH_CACHE_TTL_SECONDS:
         payload = cached["payload"]
@@ -319,13 +583,21 @@ def search_singer():
         return jsonify(payload)
 
     try:
-        payload = fetch_qq_search_payload(name)
-        updated_at = write_search_cache(name, payload)
+        payload = fetch_aggregated_search_payload(name)
+        all_providers_ok = all(
+            provider["ok"]
+            for provider in payload["data"]["_providers"].values()
+        )
+        updated_at = (
+            write_search_cache(cache_key, payload)
+            if all_providers_ok
+            else now
+        )
         payload["data"]["_cached"] = False
         payload["data"]["_updated_at"] = updated_at
         return jsonify(payload)
     except Exception as e:
-        logger.warning(f"QQ Music search failed for {name}: {e}")
+        logger.warning(f"Multi-platform music search failed for {name}: {e}")
         if cached:
             payload = cached["payload"]
             payload["data"]["_cached"] = True
