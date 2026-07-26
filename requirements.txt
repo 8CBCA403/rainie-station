@@ -2,4 +2,3 @@ Flask
 selenium
 beautifulsoup4
 requests
-schedule

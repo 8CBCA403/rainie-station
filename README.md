@@ -1,6 +1,6 @@
 # Rainie Station
 
-这是一个基于树莓派部署的 Web 项目，主题为杨丞琳的《房间里的大象》演唱会。它提供了一个极具设计感的静态展示页面。
+这是一个部署在 Linux 云服务器上的 Web 项目，主题为杨丞琳的《房间里的大象》演唱会。它提供了一个极具设计感的静态展示页面。
 
 线上访问地址：<https://rainieclub.top/>
 
@@ -15,7 +15,7 @@
 
 - **Backend**: Python 3, Flask, SQLite
 - **Frontend**: HTML5, CSS3 (Flexbox/Grid), Vanilla JS
-- **Deployment**: Systemd, Raspberry Pi (Raspbian)
+- **Deployment**: Linux, Systemd
 
 ## 🚀 快速开始
 
@@ -48,7 +48,7 @@ python app.py
 访问 [http://localhost:8000](http://localhost:8000) 即可预览。
 *首次运行时，系统会自动在 `db/` 目录下初始化 `room64.db` 数据库。*
 
-## 📦 部署 (树莓派/Linux)
+## 📦 部署 (Linux)
 
 本项目包含标准的 Systemd 服务配置文件。
 
