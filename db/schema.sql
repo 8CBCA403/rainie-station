@@ -14,3 +14,10 @@ CREATE TABLE IF NOT EXISTS tours (
     venue TEXT,              -- 场馆
     status TEXT DEFAULT 'scheduled' -- scheduled, completed, cancelled
 );
+
+-- QQ 音乐公开搜索结果缓存
+CREATE TABLE IF NOT EXISTS music_search_cache (
+    query TEXT PRIMARY KEY,
+    payload TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+);

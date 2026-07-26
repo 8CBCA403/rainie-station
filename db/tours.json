@@ -717,7 +717,7 @@
         "tour_name": "房间里的大象",
         "city": "绍兴",
         "date": "2026-01-17T19:30:00",
-        "venue": "西施篮球中心",
+        "venue": "诸暨西施篮球中心体育馆",
         "status": "completed"
     },
     {
@@ -738,7 +738,7 @@
         "tour_name": "房间里的大象",
         "city": "泉州",
         "date": "2026-03-14T19:30:00",
-        "venue": "晋江第二体育中心体育馆",
+        "venue": "晋江市第二体育中心主体育馆",
         "status": "scheduled"
     },
     {
@@ -750,9 +750,86 @@
     },
     {
         "tour_name": "房间里的大象",
+        "city": "新加坡",
+        "date": "2026-04-11T19:30:00",
+        "venue": "星宇表演艺术中心",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
+        "city": "合肥",
+        "date": "2026-05-02T19:30:00",
+        "venue": "合肥少荃体育中心体育馆",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
         "city": "上海",
         "date": "2026-05-23T19:00:00",
         "venue": "梅赛德斯奔驰文化中心",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
+        "city": "无锡",
+        "date": "2026-06-06T19:30:00",
+        "venue": "无锡体育中心体育馆",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
+        "city": "东莞",
+        "date": "2026-06-20T19:30:00",
+        "venue": "东莞银行篮球中心",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
+        "city": "澳门",
+        "date": "2026-07-04T19:30:00",
+        "venue": "威尼斯人综艺馆",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
+        "city": "北京",
+        "date": "2026-08-16T19:30:00",
+        "venue": "国家体育馆",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
+        "city": "广州",
+        "date": "2026-08-29T19:30:00",
+        "venue": "宝能广州国际体育演艺中心",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
+        "city": "宁波",
+        "date": "2026-09-05T19:30:00",
+        "venue": "宁波奥体中心体育馆",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
+        "city": "武汉",
+        "date": "2026-10-17T19:30:00",
+        "venue": "武汉体育中心体育馆",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
+        "city": "长沙",
+        "date": "2026-11-14T19:30:00",
+        "venue": "湖南国际会展中心D厅芒果馆",
+        "status": "scheduled"
+    },
+    {
+        "tour_name": "房间里的大象",
+        "city": "深圳",
+        "date": "2026-12-12T19:30:00",
+        "venue": "深圳市体育中心体育馆（主馆）",
         "status": "scheduled"
     }
 ]

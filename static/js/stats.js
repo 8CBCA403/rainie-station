@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 搜索框已被注释掉，所以加个判断
     const searchBtn = document.getElementById('search-btn');
     const searchInput = document.getElementById('singer-name');
-    
+
     if (searchBtn && searchInput) {
         searchBtn.addEventListener('click', () => {
             const name = searchInput.value.trim();
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('lyrics-modal').style.display = 'none';
         });
     }
-    
+
     // Close modal when clicking outside
     const lyricsModal = document.getElementById('lyrics-modal');
     if (lyricsModal) {
@@ -57,67 +57,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let originalHotSongs = [];
 
-// 定期轮询机制
-let pollingInterval = null;
-// 重试计数器 Map，key=mid, value=retryCount
-let retryMap = new Map();
-const MAX_RETRIES = 12; // 12次 * 5秒 = 60秒，超过则放弃
-
-function startPolling(songs) {
-    if (pollingInterval) clearInterval(pollingInterval);
-    retryMap.clear();
-    
-    // 每 5 秒轮询一次状态
-    pollingInterval = setInterval(() => {
-        let hasPending = false;
-        
-        songs.forEach(song => {
-            const mid = song.songmid || song.mid;
-            const container = document.getElementById(`index-data-${mid}`);
-            
-            // 如果这个格子还显示“等待队列中”或“数据获取失败”，就尝试重新获取
-            // 我们通过检查是否包含 loading-spinner 或特定文本来判断
-            if (container) {
-                const text = container.innerText;
-                const isPending = text.includes("等待队列中") || text.includes("数据获取失败") || text.includes("Data queuing") || text.includes("请求超时");
-                
-                if (isPending) {
-                    // 检查重试次数
-                    let retries = retryMap.get(mid) || 0;
-                    if (retries < MAX_RETRIES) {
-                        hasPending = true;
-                        retryMap.set(mid, retries + 1);
-                        
-                        // 重新触发单个获取
-                        fetchSongIndex(mid, {
-                            dataContainer: container,
-                            chartContainer: document.getElementById(`index-chart-${mid}`)
-                        });
-                    } else {
-                        // 超过重试次数，显示永久失败
-                        if (!text.includes("已停止重试")) {
-                             container.innerHTML = '<span style="opacity:0.3; font-size:0.8rem;">获取超时 (树莓派未响应)</span>';
-                        }
-                    }
-                }
-            }
-        });
-        
-        // 如果所有都加载完了，停止轮询
-        if (!hasPending) {
-            clearInterval(pollingInterval);
-            console.log("All data loaded, polling stopped.");
-        }
-        
-    }, 5000); // 5秒轮询一次
-}
-
 async function searchSinger(name) {
     const songListEl = document.getElementById('song-list');
-    
+
     // Reset / Loading State
     songListEl.innerHTML = '<div class="loading">正在获取数据...</div>';
-    
+
     // 安全地重置元素内容
     const resetEl = (id) => { const el = document.getElementById(id); if(el) el.textContent = '-'; };
     resetEl('total-songs');
@@ -128,22 +73,26 @@ async function searchSinger(name) {
     try {
         console.log(`Fetching data for: ${name}`); // Debug Log
         const response = await fetch(`/api/search_singer?name=${encodeURIComponent(name)}`);
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const result = await response.json();
         console.log('API Result:', result); // Debug Log
-        
+
         let singerData = null;
         let songs = [];
         let stats = {};
+        let isFallbackMode = false;
+        let skipIndexFetch = false;
 
         // QQ Music 官方结构
         if (result.code === 0 && result.data) {
             const d = result.data;
-            
+            isFallbackMode = !!d._fallback;
+            skipIndexFetch = !!d._skip_index || isFallbackMode;
+
             // 1. 优先从 zhida 获取歌手统计信息
             if (d.zhida && d.zhida.zhida_singer) {
                 const z = d.zhida.zhida_singer;
@@ -183,12 +132,12 @@ async function searchSinger(name) {
 if (singerData || songs.length > 0) {
     // 保存原始热门歌曲列表
     originalHotSongs = songs;
-    
+
     // 如果只有歌曲没有歌手信息（极少见），造一个默认的
     if (!singerData && songs.length > 0) {
-        singerData = { name: name, pic: '' }; 
+        singerData = { name: name, pic: '' };
     }
-    
+
     // 注意：不再调用 updateSingerInfo 覆盖简介区域
     // 只更新头像和名字，不更新 stats.html 中写死的 HTML 简介
     if (singerData) {
@@ -198,15 +147,12 @@ if (singerData || songs.length > 0) {
             document.getElementById('singer-bg').style.backgroundImage = `url('${picUrl}')`;
         }
     }
-    
+
     // 渲染歌曲列表
-    renderSongs(songs, {});
-    
+    renderSongs(songs, {}, { skipIndexFetch, isFallbackMode });
+
     // 提取并渲染专辑列表
     processAndRenderAlbums(songs);
-    
-    // 启动轮询，等待树莓派数据
-    startPolling(songs);
 
 } else {
             songListEl.innerHTML = '<div class="loading">未找到相关数据</div>';
@@ -225,11 +171,11 @@ function updateSingerInfo(singer) {
         const picUrl = singer.pic.replace('150x150', '500x500').replace('300x300', '800x800');
         document.getElementById('singer-bg').style.backgroundImage = `url('${picUrl}')`;
     }
-    
+
     // 如果有简介信息，可以在这里显示
     // 目前搜索接口返回的简介较少，这里可以放一些静态文案或者基于统计数据的生成文案
     const descEl = document.getElementById('singer-desc');
-    /* 
+    /*
     // 禁用 JS 对简介区域的修改，保持 HTML 静态内容
     if (descEl) {
         if (singer.songNum) {
@@ -250,11 +196,11 @@ function updateSingerInfo(singer) {
 function updateStats(stats) {
     const songEl = document.getElementById('total-songs');
     if (songEl) songEl.textContent = stats.song_num || '-';
-    
+
     // 之前 HTML 里删了这个元素，这里必须加判断，否则报错白屏
     const albumEl = document.getElementById('total-albums');
     if (albumEl) albumEl.textContent = stats.album_num || '-';
-    
+
     const mvEl = document.getElementById('total-mvs');
     if (mvEl) mvEl.textContent = stats.mv_num || '-';
 }
@@ -262,7 +208,7 @@ function updateStats(stats) {
 function processAndRenderAlbums(songs) {
     const albumListEl = document.getElementById('album-list');
     if (!albumListEl) return;
-    
+
     if (!songs || songs.length === 0) {
         albumListEl.innerHTML = '<div class="loading">暂无专辑</div>';
         return;
@@ -276,7 +222,7 @@ function processAndRenderAlbums(songs) {
         // 2. song.albummid (扁平结构)
         const mid = song.album?.mid || song.albummid || song.albumMid;
         const name = song.album?.name || song.albumname || song.albumName;
-        
+
         // 确保有 mid 和 name，且不是空的
         if (mid && name) {
             if (!albumMap.has(mid)) {
@@ -287,7 +233,7 @@ function processAndRenderAlbums(songs) {
                 else if (song.time_public) time = song.time_public;
                 else if (song.pubtime) time = song.pubtime;
                 else if (song.pub_time) time = song.pub_time;
-                
+
                 albumMap.set(mid, {
                     mid: mid,
                     name: name,
@@ -298,7 +244,7 @@ function processAndRenderAlbums(songs) {
     });
 
     const albums = Array.from(albumMap.values());
-    
+
     // 渲染
     if (albums.length === 0) {
         albumListEl.innerHTML = '<div class="loading">暂无专辑信息</div>';
@@ -316,10 +262,10 @@ function processAndRenderAlbums(songs) {
     albums.forEach(album => {
         const div = document.createElement('div');
         div.className = 'album-item';
-        
+
         // 封面图
         const picUrl = `https://y.gtimg.cn/music/photo_new/T002R300x300M000${album.mid}.jpg`;
-        
+
         // 格式化时间
         let pubTime = formatPubTime(album.time_public);
 
@@ -339,7 +285,7 @@ function processAndRenderAlbums(songs) {
 async function fetchAlbumSongs(mid, albumName) {
     const songListEl = document.getElementById('song-list');
     songListEl.innerHTML = '<div class="loading">正在加载专辑歌曲...</div>';
-    
+
     // Show back button
     document.getElementById('song-list-title').textContent = `专辑: ${albumName}`;
     document.getElementById('back-to-hot-btn').style.display = 'block';
@@ -347,7 +293,7 @@ async function fetchAlbumSongs(mid, albumName) {
     try {
         const response = await fetch(`/api/album_songs?mid=${mid}`);
         const result = await response.json();
-        
+
         if (result.code === 0 && result.data && result.data.list) {
             // Inject album date if missing in songs (common in album detail API)
             const albumDate = result.data.aDate || result.data.pub_time || '';
@@ -386,7 +332,7 @@ function parseTime(timeStr) {
 // 辅助函数：统一格式化显示时间
 function formatPubTime(timeStr) {
     if (!timeStr) return '-';
-    
+
     // 如果是时间戳
     if (/^\d+$/.test(timeStr)) {
          let ts = parseInt(timeStr);
@@ -401,7 +347,7 @@ function formatPubTime(timeStr) {
 
 async function fetchRealCollectCounts(songs) {
     const songListEl = document.getElementById('song-list');
-    
+
     // 如果没有歌，直接返回
     if (!songs || songs.length === 0) {
         songListEl.innerHTML = '<div class="loading">未找到歌曲</div>';
@@ -412,16 +358,16 @@ async function fetchRealCollectCounts(songs) {
     renderSongs(songs, {});
 }
 
-function renderSongs(songs, statsMap) {
+function renderSongs(songs, statsMap, options = {}) {
     const songListEl = document.getElementById('song-list');
     songListEl.innerHTML = '';
-    
+
     // 初始化进度条
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
     const progressPercent = document.getElementById('progress-percent');
-    
+
     if (progressContainer) {
         progressContainer.style.display = 'block';
         progressBar.style.width = '0%';
@@ -439,7 +385,7 @@ function renderSongs(songs, statsMap) {
         if (progressBar) progressBar.style.width = `${percent}%`;
         if (progressPercent) progressPercent.textContent = `${percent}%`;
         if (progressText) progressText.textContent = `正在分析: ${completedCount}/${totalCount}`;
-        
+
         if (completedCount >= totalCount) {
             setTimeout(() => {
                 if (progressText) progressText.textContent = '分析完成';
@@ -454,7 +400,7 @@ function renderSongs(songs, statsMap) {
     songs.forEach((song, index) => {
         const div = document.createElement('div');
         div.className = 'song-item';
-        
+
         const songName = song.songname || song.name || song.songName;
         const albumName = song.albumname || song.album?.name || song.albumName || '';
         // 使用真实的发布时间，如果没有则显示横杠
@@ -476,9 +422,20 @@ function renderSongs(songs, statsMap) {
         // 获取 songmid
         const songmid = song.songmid || song.mid;
         const singerName = (song.singer && song.singer.length > 0) ? song.singer[0].name : "杨丞琳";
+        const sourceBadges = (song.sources || []).map(source => `
+            <a href="${escapeHtml(source.url)}"
+               target="_blank"
+               rel="noopener noreferrer"
+               onclick="event.stopPropagation();"
+               style="display:inline-flex; align-items:center; padding:2px 7px; margin-left:5px;
+                      border-radius:999px; background:rgba(79,172,254,0.12);
+                      color:#8bc8ff; font-size:0.68rem; text-decoration:none;">
+                ${escapeHtml(source.label)}
+            </a>
+        `).join('');
 
         // Add click event for lyrics
-        div.onclick = () => fetchLyrics(songmid, songName, singerName);
+        div.onclick = () => fetchLyrics(songmid, songName, singerName, song.sources || []);
 
         div.innerHTML = `
             <!-- 1. 左侧：歌曲基础信息 -->
@@ -491,6 +448,7 @@ function renderSongs(songs, statsMap) {
                     💿 ${escapeHtml(albumName)}
                     <span style="opacity:0.4; margin:0 5px;">|</span>
                     📅 ${escapeHtml(pubTime.toString().includes('-') ? pubTime : (pubTime == '-' ? '-' : new Date(pubTime).getFullYear()))}
+                    ${sourceBadges}
                 </div>
             </div>
 
@@ -510,21 +468,89 @@ function renderSongs(songs, statsMap) {
         songListEl.appendChild(div);
     });
 
+    if (options.skipIndexFetch) {
+        if (progressContainer) progressContainer.style.display = 'none';
+        songs.forEach(song => {
+            const songmid = song.songmid || song.mid;
+            const dataEl = document.getElementById(`index-data-${songmid}`);
+            const chartEl = document.getElementById(`index-chart-${songmid}`);
+            const duration = song.duration_seconds
+                ? `${Math.floor(song.duration_seconds / 60)}:${String(Math.round(song.duration_seconds % 60)).padStart(2, '0')}`
+                : '-';
+            const aliases = (song.aliases || []).filter(Boolean);
+            const qualities = (song.qualities || []).filter(Boolean);
+            const sourceCount = (song.sources || []).length;
+            const metricItems = [
+                `<span>⏱ ${escapeHtml(duration)}</span>`,
+                `<span>🌐 ${sourceCount} 个平台</span>`,
+                song.has_mv ? '<span>🎬 有 MV</span>' : '',
+                song.heat_level !== null && song.heat_level !== undefined
+                    ? `<span>🔥 热度 ${escapeHtml(song.heat_level)}</span>`
+                    : '',
+                song.owner_count
+                    ? `<span>❤️ 收藏 ${Number(song.owner_count).toLocaleString()}</span>`
+                    : '',
+                song.popularity
+                    ? `<span>📈 人气 ${escapeHtml(song.popularity)}</span>`
+                    : ''
+            ].filter(Boolean);
+
+            if (dataEl) {
+                dataEl.innerHTML = `
+                    <div style="display:flex; flex-wrap:wrap; gap:7px 12px; font-size:0.78rem; opacity:0.82;">
+                        ${metricItems.join('')}
+                    </div>
+                    ${aliases.length ? `
+                        <div style="margin-top:8px; font-size:0.72rem; opacity:0.5;">
+                            别名：${aliases.map(escapeHtml).join(' / ')}
+                        </div>
+                    ` : ''}
+                `;
+            }
+            if (chartEl) {
+                const cover = song.cover_url
+                    ? `<img src="${escapeHtml(song.cover_url)}"
+                            alt="${escapeHtml(song.songname || song.name || '歌曲')}封面"
+                            loading="lazy"
+                            style="width:58px; height:58px; object-fit:cover; border-radius:8px;
+                                   box-shadow:0 4px 12px rgba(0,0,0,0.25);">`
+                    : '';
+                const qualityBadges = qualities.length
+                    ? qualities.map(quality => `
+                        <span style="padding:2px 6px; border-radius:4px; background:rgba(32,191,100,0.12);
+                                     color:#6bd99a; font-size:0.66rem;">
+                            ${escapeHtml(quality)}
+                        </span>
+                    `).join('')
+                    : '<span style="opacity:0.35; font-size:0.72rem;">音质信息暂无</span>';
+                chartEl.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; width:100%;">
+                        ${cover}
+                        <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; max-width:130px;">
+                            ${qualityBadges}
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        return;
+    }
+
     // === 并发控制 ===
     // 服务器性能较弱 (2核2G)，必须限制并发为 1，否则 5 个浏览器实例会撑爆内存
-    const CONCURRENT_LIMIT = 1; 
+    const CONCURRENT_LIMIT = 1;
     processQueue(songs, CONCURRENT_LIMIT);
 }
 
 // 带并发限制的队列处理
 async function processQueue(songs, limit) {
     const songListEl = document.getElementById('song-list');
-    
+
     // 初始化进度
     const progressText = document.getElementById('progress-text');
     const progressBar = document.getElementById('progress-bar');
     const progressPercent = document.getElementById('progress-percent');
-    
+
     let completedCount = 0;
     const totalCount = songs.length;
     let activeCount = 0;
@@ -532,18 +558,18 @@ async function processQueue(songs, limit) {
 
     const next = () => {
         if (index >= totalCount) return;
-        
+
         const song = songs[index];
         const currentIndex = index;
         index++;
         activeCount++;
 
         const songmid = song.songmid || song.mid;
-        
+
         // 更新 UI 状态
         const statusEl = document.getElementById(`index-data-${songmid}`)?.querySelector('span');
         if (statusEl) statusEl.textContent = '正在分析...';
-        
+
         // 执行请求
         fetchSongIndex(songmid, {
             dataContainer: document.getElementById(`index-data-${songmid}`),
@@ -551,13 +577,13 @@ async function processQueue(songs, limit) {
         }).finally(() => {
             activeCount--;
             completedCount++;
-            
+
             // 更新进度条
             const percent = Math.round((completedCount / totalCount) * 100);
             if (progressBar) progressBar.style.width = `${percent}%`;
             if (progressPercent) progressPercent.textContent = `${percent}%`;
             if (progressText) progressText.textContent = `正在分析: ${completedCount}/${totalCount}`;
-            
+
             // 继续处理下一个
             if (index < totalCount) {
                 next();
@@ -594,15 +620,15 @@ document.head.appendChild(style);
 
 async function fetchSongIndex(mid, containers) {
     if (!containers.dataContainer) return;
-    
+
     try {
         const response = await fetch(`/api/song_index?mid=${mid}`);
         const result = await response.json();
-        
+
         // 成功获取数据后，将数据绑定到 DOM 元素上，供弹窗使用
         if (result.code === 0 && result.data) {
             const d = result.data;
-            
+
             // 绑定数据到行元素 (song-item)
             // 往上找父级 .song-item
             const songItem = containers.dataContainer.closest('.song-item');
@@ -610,7 +636,7 @@ async function fetchSongIndex(mid, containers) {
                 // 将成就数据转为 JSON 字符串存入 dataset
                 songItem.dataset.achievements = JSON.stringify(d.achievements || []);
             }
-            
+
             // --- 渲染中间列：核心数据 ---
             // 颜色判断辅助函数
             const getChangeColor = (text) => {
@@ -625,7 +651,7 @@ async function fetchSongIndex(mid, containers) {
                     <div>
                         <div style="color:#20bf64; font-size:1.4rem; font-weight:bold; line-height:1;">${d.music_index || '-'}</div>
                         <div style="font-size:0.75rem; opacity:0.6; margin-top:2px;">
-                            实时音乐指数 
+                            实时音乐指数
                             <span style="opacity:0.5; margin-left:5px; font-size:0.65rem;">${d.update_time || ''}</span>
                         </div>
                     </div>
@@ -634,7 +660,7 @@ async function fetchSongIndex(mid, containers) {
                         <div style="font-size:0.75rem; opacity:0.6; margin-top:2px;">全站排名</div>
                     </div>
                 </div>
-                
+
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:rgba(255,255,255,0.03); padding:8px; border-radius:6px;">
                     <div style="text-align:center;">
                         <div style="font-size:0.9rem;">${d.yesterday_index || '-'}</div>
@@ -652,14 +678,14 @@ async function fetchSongIndex(mid, containers) {
                     </div>
                 </div>
             `;
-            
+
             // --- 渲染右侧列：走势图与成就 ---
             let chartHtml = '';
             if (d.chart_image) {
                 chartHtml = `
                     <div style="flex:1; display:flex; justify-content:center; align-items:center; width:100%;">
-                        <img src="${d.chart_image}" 
-                             style="max-height:120px; width:auto; max-width:100%; border-radius:6px; opacity:0.95; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor: zoom-in;" 
+                        <img src="${d.chart_image}"
+                             style="max-height:120px; width:auto; max-width:100%; border-radius:6px; opacity:0.95; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor: zoom-in;"
                              alt="走势图"
                              onclick="showLightbox(this.src); event.stopPropagation();">
                     </div>
@@ -667,20 +693,20 @@ async function fetchSongIndex(mid, containers) {
             } else {
                 chartHtml = `<div style="flex:1; display:flex; align-items:center; justify-content:center; opacity:0.3; font-size:0.8rem;">暂无走势图</div>`;
             }
-            
+
             // 链接按钮
             const linkBtn = `
-                <a href="https://y.qq.com/m/client/music_index/index.html?ADTAG=cbshare&channelId=10036163&mid=${mid}&type=${mid}" 
-                   target="_blank" 
+                <a href="https://y.qq.com/m/client/music_index/index.html?ADTAG=cbshare&channelId=10036163&mid=${mid}&type=${mid}"
+                   target="_blank"
                    style="position:absolute; top:0; right:0; padding:4px 8px; background:rgba(255,255,255,0.1); border-radius:0 0 0 8px; color:#4facfe; font-size:0.7rem; text-decoration:none;">
                    🔗 源站
                 </a>
             `;
-            
+
             // 容器设为相对定位以便放链接
             containers.chartContainer.style.position = 'relative';
             containers.chartContainer.innerHTML = chartHtml + linkBtn;
-            
+
         } else {
             containers.dataContainer.innerHTML = '<span style="opacity:0.3">数据获取失败</span>';
             containers.chartContainer.innerHTML = '';
@@ -691,77 +717,42 @@ async function fetchSongIndex(mid, containers) {
     }
 }
 
-async function fetchLyrics(mid, songName, singerName) {
+async function fetchLyrics(mid, songName, singerName, sources = []) {
     const modal = document.getElementById('lyrics-modal');
     const titleEl = document.getElementById('lyrics-title');
     const contentEl = document.getElementById('lyrics-content');
     const metaEl = document.getElementById('lyrics-meta');
-    const achListEl = document.getElementById('achievements-list'); // 新增：成就列表容器
 
-    // 1. 初始化弹窗状态
     modal.style.display = 'flex';
     titleEl.textContent = songName;
     metaEl.textContent = `歌手：${singerName}`;
     contentEl.textContent = '正在加载歌词...';
-    achListEl.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">正在加载成就...</div>'; // Loading 状态
 
-    // 2. 获取数据
-    // 尝试从 DOM 获取缓存的成就数据
-    const songItem = document.getElementById(`index-data-${mid}`)?.closest('.song-item');
-    let cachedAchs = null;
-    if (songItem && songItem.dataset.achievements) {
-        try {
-            cachedAchs = JSON.parse(songItem.dataset.achievements);
-        } catch (e) { console.error('解析缓存成就失败', e); }
-    }
-
-    // 如果有缓存，直接显示成就，不再请求 song_index
-    if (cachedAchs) {
-        renderAchievements(cachedAchs, achListEl);
-        // 只请求歌词
-        fetch(`/api/lyrics?mid=${mid}`)
-            .then(res => res.json())
-            .then(data => renderLyrics(data, contentEl))
-            .catch(() => contentEl.textContent = '歌词加载失败');
-    } else {
-        // 没有缓存，并行请求
-        try {
-            const [lyricsRes, indexRes] = await Promise.all([
-                fetch(`/api/lyrics?mid=${mid}`),
-                fetch(`/api/song_index?mid=${mid}`)
-            ]);
-
-            const lyricsData = await lyricsRes.json();
-            renderLyrics(lyricsData, contentEl);
-
-            const indexData = await indexRes.json();
-            if (indexData.code === 0 && indexData.data) {
-                renderAchievements(indexData.data.achievements, achListEl);
-            } else {
-                achListEl.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">暂无成就数据</div>';
-            }
-        } catch (e) {
-            console.error(e);
-            contentEl.textContent = '加载失败';
-            achListEl.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">加载失败</div>';
-        }
+    const lyricsUrl = `/api/lyrics?mid=${encodeURIComponent(mid)}&sources=${encodeURIComponent(JSON.stringify(sources))}`;
+    try {
+        const response = await fetch(lyricsUrl);
+        const lyricsData = await response.json();
+        renderLyrics(lyricsData, contentEl);
+    } catch (e) {
+        console.error(e);
+        contentEl.textContent = '歌词加载失败';
     }
 }
 
 // 辅助函数：渲染歌词
 function renderLyrics(data, container) {
     const metaEl = document.getElementById('lyrics-meta');
-    
+
     if (data.lyric || data.lyrics) {
         // 兼容不同的字段名 (API 可能返回 lyric 或 lyrics)
         const rawLyric = data.lyric || data.lyrics;
-        
+
         // 解析歌词
         const lines = rawLyric.split('\n');
         let lyricText = '';
         let composer = '';
         let lyricist = '';
-        
+
         // 正则表达式
         const tiReg = /\[ti:(.*?)\]/;
         const arReg = /\[ar:(.*?)\]/;
@@ -769,18 +760,10 @@ function renderLyrics(data, container) {
         const byReg = /\[by:(.*?)\]/;
         const offsetReg = /\[offset:(.*?)\]/;
         const timeReg = /\[\d{2}:\d{2}\.\d{2,3}\]/g;
-        
+
         lines.forEach(line => {
-            // 提取元数据
-            if (line.includes('词：') || line.includes('作词')) {
-                lyricist = line.replace(/.*(词|作词)：/, '').replace(/\]/, '').trim();
-            }
-            if (line.includes('曲：') || line.includes('作曲')) {
-                composer = line.replace(/.*(曲|作曲)：/, '').replace(/\]/, '').trim();
-            }
-            
-            // 清洗歌词内容
-            let cleanLine = line
+            // 先移除时间与 LRC 标签，再识别署名，避免把 [00:00.000] 显示到顶部。
+            const cleanLine = line
                 .replace(timeReg, '')
                 .replace(tiReg, '')
                 .replace(arReg, '')
@@ -788,47 +771,60 @@ function renderLyrics(data, container) {
                 .replace(byReg, '')
                 .replace(offsetReg, '')
                 .trim();
-            
+
+            const lyricistMatch = cleanLine.match(/^(?:作?词|填词)\s*[:：]\s*(.+)$/);
+            if (lyricistMatch) {
+                lyricist = lyricistMatch[1].trim();
+                return;
+            }
+
+            const composerMatch = cleanLine.match(/^(?:作?曲|谱曲)\s*[:：]\s*(.+)$/);
+            if (composerMatch) {
+                composer = composerMatch[1].trim();
+                return;
+            }
+
             if (cleanLine) {
                 lyricText += cleanLine + '\n';
             }
         });
-        
+
         // 渲染元数据
-        let metaHtml = '';
-        if (lyricist) metaHtml += `<span>📝 作词：${lyricist}</span> `;
-        if (composer) metaHtml += `<span style="margin-left:15px;">🎵 作曲：${composer}</span>`;
-        metaEl.innerHTML = metaHtml;
-        
+        const metaItems = [];
+        if (lyricist) metaItems.push(`作词：${escapeHtml(lyricist)}`);
+        if (composer) metaItems.push(`作曲：${escapeHtml(composer)}`);
+        const providerNames = { netease: '网易云', qq: 'QQ 音乐', kugou: '酷狗' };
+        const sourceName = providerNames[data.provider] || '';
+        if (sourceName) {
+            metaItems.push(`歌词来源：${escapeHtml(sourceName)}${data.cached ? '（缓存）' : ''}`);
+        }
+        metaEl.innerHTML = metaItems
+            .map(item => `<span style="white-space:nowrap;">${item}</span>`)
+            .join('<span style="opacity:0.35; margin:0 10px;">·</span>');
+
         // 渲染歌词文本
         container.textContent = lyricText || '暂无歌词文本';
-        
-        // 如果有翻译
-        if (data.trans) {
-            container.textContent += '\n\n=== 翻译 ===\n\n' + data.trans;
+
+        // 翻译也可能只有时间标签；清洗后没有正文时不要显示空翻译区。
+        const translatedText = (data.trans || '')
+            .split('\n')
+            .map(line => line
+                .replace(timeReg, '')
+                .replace(tiReg, '')
+                .replace(arReg, '')
+                .replace(alReg, '')
+                .replace(byReg, '')
+                .replace(offsetReg, '')
+                .trim())
+            .filter(Boolean)
+            .join('\n');
+
+        if (translatedText) {
+            container.textContent += '\n\n=== 翻译 ===\n\n' + translatedText;
         }
     } else {
         container.textContent = '暂无歌词';
         metaEl.innerHTML = '';
-    }
-}
-
-// 辅助函数：渲染成就
-function renderAchievements(achs, container) {
-    if (achs && achs.length > 0) {
-        container.innerHTML = achs.map(ach => {
-            const match = ach.match(/^(\d{4}\/\d{2}\/\d{2})\s+(.+)/);
-            const date = match ? match[1] : '';
-            const content = match ? match[2] : ach;
-            return `
-                <div class="ach-item">
-                    ${date ? `<div class="ach-date">${date}</div>` : ''}
-                    <div class="ach-content">${escapeHtml(content)}</div>
-                </div>
-            `;
-        }).join('');
-    } else {
-        container.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">暂无近期成就</div>';
     }
 }
 
@@ -846,7 +842,7 @@ function formatNumber(num) {
     if (!num) return '0';
     const n = parseInt(num);
     if (isNaN(n)) return num;
-    
+
     if (n > 100000000) {
         return (n / 100000000).toFixed(2) + '亿';
     }
