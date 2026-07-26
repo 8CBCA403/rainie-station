@@ -722,57 +722,20 @@ async function fetchLyrics(mid, songName, singerName, sources = []) {
     const titleEl = document.getElementById('lyrics-title');
     const contentEl = document.getElementById('lyrics-content');
     const metaEl = document.getElementById('lyrics-meta');
-    const achListEl = document.getElementById('achievements-list'); // 新增：成就列表容器
 
-    // 1. 初始化弹窗状态
     modal.style.display = 'flex';
     titleEl.textContent = songName;
     metaEl.textContent = `歌手：${singerName}`;
     contentEl.textContent = '正在加载歌词...';
-    achListEl.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">正在加载成就...</div>'; // Loading 状态
 
-    // 2. 获取数据
-    // 尝试从 DOM 获取缓存的成就数据
-    const songItem = document.getElementById(`index-data-${mid}`)?.closest('.song-item');
-    let cachedAchs = null;
-    if (songItem && songItem.dataset.achievements) {
-        try {
-            cachedAchs = JSON.parse(songItem.dataset.achievements);
-        } catch (e) { console.error('解析缓存成就失败', e); }
-    }
-
-    // 如果有缓存，直接显示成就，不再请求 song_index
     const lyricsUrl = `/api/lyrics?mid=${encodeURIComponent(mid)}&sources=${encodeURIComponent(JSON.stringify(sources))}`;
-
-    if (cachedAchs) {
-        renderAchievements(cachedAchs, achListEl);
-        // 只请求歌词
-        fetch(lyricsUrl)
-            .then(res => res.json())
-            .then(data => renderLyrics(data, contentEl))
-            .catch(() => contentEl.textContent = '歌词加载失败');
-    } else {
-        // 没有缓存，并行请求
-        try {
-            const [lyricsRes, indexRes] = await Promise.all([
-                fetch(lyricsUrl),
-                fetch(`/api/song_index?mid=${mid}`)
-            ]);
-
-            const lyricsData = await lyricsRes.json();
-            renderLyrics(lyricsData, contentEl);
-
-            const indexData = await indexRes.json();
-            if (indexData.code === 0 && indexData.data) {
-                renderAchievements(indexData.data.achievements, achListEl);
-            } else {
-                achListEl.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">暂无成就数据</div>';
-            }
-        } catch (e) {
-            console.error(e);
-            contentEl.textContent = '加载失败';
-            achListEl.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">加载失败</div>';
-        }
+    try {
+        const response = await fetch(lyricsUrl);
+        const lyricsData = await response.json();
+        renderLyrics(lyricsData, contentEl);
+    } catch (e) {
+        console.error(e);
+        contentEl.textContent = '歌词加载失败';
     }
 }
 
@@ -849,25 +812,6 @@ function renderLyrics(data, container) {
     } else {
         container.textContent = '暂无歌词';
         metaEl.innerHTML = '';
-    }
-}
-
-// 辅助函数：渲染成就
-function renderAchievements(achs, container) {
-    if (achs && achs.length > 0) {
-        container.innerHTML = achs.map(ach => {
-            const match = ach.match(/^(\d{4}\/\d{2}\/\d{2})\s+(.+)/);
-            const date = match ? match[1] : '';
-            const content = match ? match[2] : ach;
-            return `
-                <div class="ach-item">
-                    ${date ? `<div class="ach-date">${date}</div>` : ''}
-                    <div class="ach-content">${escapeHtml(content)}</div>
-                </div>
-            `;
-        }).join('');
-    } else {
-        container.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">暂无近期成就</div>';
     }
 }
 
