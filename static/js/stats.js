@@ -435,7 +435,7 @@ function renderSongs(songs, statsMap, options = {}) {
         `).join('');
 
         // Add click event for lyrics
-        div.onclick = () => fetchLyrics(songmid, songName, singerName);
+        div.onclick = () => fetchLyrics(songmid, songName, singerName, song.sources || []);
 
         div.innerHTML = `
             <!-- 1. 左侧：歌曲基础信息 -->
@@ -717,7 +717,7 @@ async function fetchSongIndex(mid, containers) {
     }
 }
 
-async function fetchLyrics(mid, songName, singerName) {
+async function fetchLyrics(mid, songName, singerName, sources = []) {
     const modal = document.getElementById('lyrics-modal');
     const titleEl = document.getElementById('lyrics-title');
     const contentEl = document.getElementById('lyrics-content');
@@ -742,10 +742,12 @@ async function fetchLyrics(mid, songName, singerName) {
     }
 
     // 如果有缓存，直接显示成就，不再请求 song_index
+    const lyricsUrl = `/api/lyrics?mid=${encodeURIComponent(mid)}&sources=${encodeURIComponent(JSON.stringify(sources))}`;
+
     if (cachedAchs) {
         renderAchievements(cachedAchs, achListEl);
         // 只请求歌词
-        fetch(`/api/lyrics?mid=${mid}`)
+        fetch(lyricsUrl)
             .then(res => res.json())
             .then(data => renderLyrics(data, contentEl))
             .catch(() => contentEl.textContent = '歌词加载失败');
@@ -753,7 +755,7 @@ async function fetchLyrics(mid, songName, singerName) {
         // 没有缓存，并行请求
         try {
             const [lyricsRes, indexRes] = await Promise.all([
-                fetch(`/api/lyrics?mid=${mid}`),
+                fetch(lyricsUrl),
                 fetch(`/api/song_index?mid=${mid}`)
             ]);
 
@@ -824,6 +826,11 @@ function renderLyrics(data, container) {
         let metaHtml = '';
         if (lyricist) metaHtml += `<span>📝 作词：${lyricist}</span> `;
         if (composer) metaHtml += `<span style="margin-left:15px;">🎵 作曲：${composer}</span>`;
+        const providerNames = { netease: '网易云', qq: 'QQ 音乐', kugou: '酷狗' };
+        const sourceName = providerNames[data.provider] || '';
+        if (sourceName) {
+            metaHtml += `<span style="margin-left:15px; opacity:0.7;">歌词来源：${escapeHtml(sourceName)}${data.cached ? '（缓存）' : ''}</span>`;
+        }
         metaEl.innerHTML = metaHtml;
 
         // 渲染歌词文本

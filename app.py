@@ -35,6 +35,7 @@ QQ_SEARCH_URL = "https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg"
 NETEASE_SEARCH_URL = "https://music.163.com/weapi/cloudsearch/pc"
 KUGOU_SEARCH_URL = "https://songsearch.kugou.com/song_search_v2"
 SEARCH_CACHE_TTL_SECONDS = 12 * 60 * 60
+LYRICS_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60
 NETEASE_AES_IV = b"0102030405060708"
 NETEASE_PRESET_KEY = b"0CoJUm6Qyw8W8jud"
 NETEASE_PUBLIC_KEY = b"""-----BEGIN PUBLIC KEY-----
@@ -671,6 +672,63 @@ def song_stats():
     # 直接返回空数据，不再处理 Cookie 或请求 QQ 音乐
     return jsonify({"code": 0, "song_stats": {"data": {"list": []}}})
 
+def fetch_json_url(url: str, params: dict, headers=None):
+    query = urllib.parse.urlencode(params)
+    req = urllib.request.Request(
+        f"{url}?{query}",
+        headers=headers or {"User-Agent": "Mozilla/5.0"},
+    )
+    with urllib.request.urlopen(req, timeout=15) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def fetch_provider_lyrics(provider: str, song_id: str):
+    if provider == "netease":
+        data = fetch_json_url(
+            "https://music.163.com/api/song/lyric",
+            {"os": "pc", "id": song_id, "lv": -1, "kv": -1, "tv": -1},
+            {"User-Agent": "Mozilla/5.0", "Referer": "https://music.163.com/"},
+        )
+        return {
+            "lyric": data.get("lrc", {}).get("lyric", ""),
+            "trans": data.get("tlyric", {}).get("lyric", ""),
+        }
+
+    if provider == "qq":
+        data = fetch_json_url(
+            "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg",
+            {"songmid": song_id, "format": "json", "nobase64": 1, "g_tk": 5381},
+            {"User-Agent": "Mozilla/5.0", "Referer": "https://y.qq.com/"},
+        )
+        return {"lyric": data.get("lyric", ""), "trans": data.get("trans", "")}
+
+    if provider == "kugou":
+        search = fetch_json_url(
+            "https://lyrics.kugou.com/search",
+            {"ver": 1, "man": "yes", "client": "pc", "hash": song_id},
+        )
+        candidates = search.get("candidates") or []
+        if not candidates:
+            return {"lyric": "", "trans": ""}
+        candidate = candidates[0]
+        data = fetch_json_url(
+            "https://lyrics.kugou.com/download",
+            {
+                "ver": 1,
+                "client": "pc",
+                "id": candidate["id"],
+                "accesskey": candidate["accesskey"],
+                "fmt": "lrc",
+                "charset": "utf8",
+            },
+        )
+        content = data.get("content", "")
+        lyric = base64.b64decode(content).decode("utf-8", errors="replace") if content else ""
+        return {"lyric": lyric, "trans": ""}
+
+    return {"lyric": "", "trans": ""}
+
+
 # API: 获取歌词
 @app.get("/api/lyrics")
 def get_lyrics():
@@ -678,9 +736,47 @@ def get_lyrics():
     if not songmid:
         return jsonify({"error": "Missing songmid"}), 400
 
-    return jsonify({
-        "lyric": "[00:00.00] 在线曲库已更新\n[00:05.00] 当前暂不提供歌词内容\n[00:10.00] 可前往 QQ 音乐查看完整歌词"
-    })
+    sources = []
+    raw_sources = request.args.get("sources", "")
+    if raw_sources:
+        try:
+            parsed = json.loads(raw_sources)
+            if isinstance(parsed, list):
+                sources = parsed
+        except (TypeError, ValueError, json.JSONDecodeError):
+            pass
+
+    refs = {}
+    for source in sources:
+        provider = str(source.get("provider", "")).lower()
+        source_id = str(source.get("id", ""))
+        if provider in {"netease", "qq", "kugou"} and re.fullmatch(r"[A-Za-z0-9_-]{1,64}", source_id):
+            refs[provider] = source_id
+    refs.setdefault("qq", songmid)
+
+    errors = []
+    for provider in ("netease", "qq", "kugou"):
+        source_id = refs.get(provider)
+        if not source_id:
+            continue
+        cache_key = f"lyrics-v1:{provider}:{source_id}"
+        cached = read_search_cache(cache_key)
+        if cached and int(time.time()) - cached["updated_at"] < LYRICS_CACHE_TTL_SECONDS:
+            payload = cached["payload"]
+            payload.update({"provider": provider, "cached": True})
+            return jsonify(payload)
+        try:
+            payload = fetch_provider_lyrics(provider, source_id)
+            if payload.get("lyric", "").strip():
+                write_search_cache(cache_key, payload)
+                payload.update({"provider": provider, "cached": False})
+                return jsonify(payload)
+            errors.append(f"{provider}: empty")
+        except Exception as exc:
+            logger.warning("Lyrics fetch failed for %s:%s: %s", provider, source_id, exc)
+            errors.append(f"{provider}: unavailable")
+
+    return jsonify({"lyric": "", "trans": "", "error": "；".join(errors)}), 502
 
 # API: 获取专辑详情（含歌曲列表）
 @app.get("/api/album_songs")
