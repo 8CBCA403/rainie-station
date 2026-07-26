@@ -10,8 +10,18 @@
     <title>杨丞琳『房间里的大象』</title>
 
     <link rel="icon" type="image/png" href="/static/img/1.png" />
-    <link rel="stylesheet" href="/static/css/desktop.css?v=12" />
-    <link rel="stylesheet" href="/static/css/mobile.css?v=1" />
+    <link rel="stylesheet" href="/static/css/desktop.css?v=14" />
+    <link rel="stylesheet" href="/static/css/mobile.css?v=4" />
+    <style>
+      #bg-slider {
+        opacity: 0 !important;
+        background: #080b14;
+        transition: opacity 0.8s ease;
+      }
+      #bg-slider.weibo-ready {
+        opacity: 1 !important;
+      }
+    </style>
   </head>
 
   <body>
@@ -30,7 +40,10 @@
       <div class="card">
         <!-- ✅ 中央线条大象：把 1.png 放到网站目录即可 -->
         <div class="elephant-wrap">
-          <img src="/static/img/1.png" alt="Elephant Line Art" />
+          <picture>
+            <source media="(max-width: 520px)" srcset="/static/img/mobile/elephant.webp" type="image/webp" />
+            <img src="/static/img/1.png" alt="Elephant Line Art" />
+          </picture>
         </div>
 
         <!-- 房间号 -->
@@ -76,6 +89,10 @@
                 <span class="icon">♫</span>
                 <span class="text">MUSIC ARCHIVE</span>
               </a>
+              <a href="/gallery" class="music-btn">
+                <span class="icon">▧</span>
+                <span class="text">IMAGE ARCHIVE</span>
+              </a>
             </div>
           </div>
 
@@ -120,6 +137,6 @@
       </div>
     </div>
 
-    <script src="/static/js/script.js?v=4"></script>
+    <script src="/static/js/script.js?v=9"></script>
   </body>
 </html>

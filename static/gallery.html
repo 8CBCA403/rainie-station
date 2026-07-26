@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#17122a" />
+    <title>图片库｜楊丞琳</title>
+    <link rel="icon" type="image/png" href="/static/img/1.png" />
+    <link rel="stylesheet" href="/static/css/gallery.css?v=1" />
+  </head>
+  <body>
+    <header class="gallery-header">
+      <a class="back-link" href="/" aria-label="返回首页">← 返回房间</a>
+      <div class="header-mark" aria-hidden="true">ROOM 64 · IMAGE ARCHIVE</div>
+    </header>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">THE MOMENTS WE KEEP</p>
+        <h1>图片库</h1>
+        <p class="hero-copy">收藏舞台上的光，也收藏每一个被记住的瞬间。</p>
+        <div class="archive-meta">
+          <span><b id="photo-count">0</b> 张图片</span>
+          <span class="meta-divider"></span>
+          <span>每日 10:00 / 22:00 更新</span>
+        </div>
+      </section>
+      <section class="archive" aria-labelledby="archive-title">
+        <div class="archive-toolbar">
+          <h2 id="archive-title">全部影像</h2>
+          <div class="filters" role="group" aria-label="按来源筛选">
+            <button class="filter is-active" type="button" data-source="all">全部</button>
+            <button class="filter" type="button" data-source="杨丞琳">杨丞琳</button>
+            <button class="filter" type="button" data-source="杨丞琳工作室">工作室</button>
+          </div>
+        </div>
+        <div id="gallery-grid" class="gallery-grid" aria-live="polite"></div>
+        <p id="empty-state" class="empty-state" hidden>这个分类还没有图片。</p>
+      </section>
+    </main>
+    <footer>
+      <span>ROOM 64 STATION</span>
+      <span>树与天空之间，我们保存光。</span>
+    </footer>
+    <dialog id="lightbox" class="lightbox">
+      <button class="lightbox-close" type="button" aria-label="关闭大图">×</button>
+      <button class="lightbox-nav lightbox-prev" type="button" aria-label="上一张">←</button>
+      <figure>
+        <img id="lightbox-image" alt="" />
+        <figcaption>
+          <div>
+            <p id="lightbox-title"></p>
+            <span id="lightbox-source"></span>
+          </div>
+          <span id="lightbox-index"></span>
+        </figcaption>
+      </figure>
+      <button class="lightbox-nav lightbox-next" type="button" aria-label="下一张">→</button>
+    </dialog>
+    <script src="/static/js/gallery.js?v=2"></script>
+  </body>
+</html>

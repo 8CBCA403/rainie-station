@@ -4,6 +4,9 @@ __pycache__/
 *$py.class
 venv/
 .env
+secrets/
+*.cookies
+cookies.txt
 
 # Database
 *.db
@@ -12,6 +15,11 @@ db/*.db
 # Logs
 logs/
 *.log
+db/*archive*
+
+# Downloaded social-media assets and local synchronization workspace
+static/img/weibo/
+server-copy/
 
 # System
 .DS_Store

@@ -1,3 +1,5 @@
 Flask
 requests
 pycryptodome
+gallery-dl==1.32.8
+opencc-python-reimplemented==0.1.7
