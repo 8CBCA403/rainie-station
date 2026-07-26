@@ -85,11 +85,13 @@ async function searchSinger(name) {
         let songs = [];
         let stats = {};
         let isFallbackMode = false;
+        let skipIndexFetch = false;
 
         // QQ Music 官方结构
         if (result.code === 0 && result.data) {
             const d = result.data;
             isFallbackMode = !!d._fallback;
+            skipIndexFetch = !!d._skip_index || isFallbackMode;
 
             // 1. 优先从 zhida 获取歌手统计信息
             if (d.zhida && d.zhida.zhida_singer) {
@@ -147,7 +149,7 @@ if (singerData || songs.length > 0) {
     }
 
     // 渲染歌曲列表
-    renderSongs(songs, {}, { skipIndexFetch: isFallbackMode });
+    renderSongs(songs, {}, { skipIndexFetch, isFallbackMode });
 
     // 提取并渲染专辑列表
     processAndRenderAlbums(songs);
@@ -461,7 +463,9 @@ function renderSongs(songs, statsMap, options = {}) {
             const dataEl = document.getElementById(`index-data-${songmid}`);
             const chartEl = document.getElementById(`index-chart-${songmid}`);
             if (dataEl) {
-                dataEl.innerHTML = '<span style="opacity:0.5; font-size:0.85rem;">离线模式：仅展示基础歌曲信息</span>';
+                dataEl.innerHTML = options.isFallbackMode
+                    ? '<span style="opacity:0.5; font-size:0.85rem;">本地备用曲库：仅展示基础歌曲信息</span>'
+                    : '<span style="opacity:0.5; font-size:0.85rem;">在线曲库：实时指数暂不提供</span>';
             }
             if (chartEl) {
                 chartEl.innerHTML = '<div style="opacity:0.35; font-size:0.8rem;">暂无实时趋势</div>';

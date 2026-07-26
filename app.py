@@ -1,14 +1,13 @@
 import sqlite3
 import datetime
+import time
 from pathlib import Path
 from flask import Flask, send_from_directory, jsonify, request
 import urllib.request
 import urllib.parse
 import json
 
-import re
 import logging
-from scrape_selenium import scrape_music_index
 
 # 复用或重新配置日志 (为了确保 app.py 也能打日志)
 logging.basicConfig(
@@ -25,6 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "db" / "room64.db"
 SCHEMA_PATH = BASE_DIR / "db" / "schema.sql"
 TOURS_JSON_PATH = BASE_DIR / "db" / "tours.json"
+QQ_SEARCH_URL = "https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg"
+SEARCH_CACHE_TTL_SECONDS = 12 * 60 * 60
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
@@ -98,8 +99,125 @@ def build_fallback_search_payload(name: str):
             },
             "song": {"list": fallback_songs},
         },
-        "warning": "proxy_unavailable_using_fallback",
+        "warning": "live_catalog_unavailable_using_local_fallback",
     }
+
+
+def normalize_qq_search_payload(name: str, source_data: dict):
+    """Convert QQ Music smartbox data to the structure used by the music page."""
+    fallback = build_fallback_search_payload(name)
+    fallback_songs = fallback["data"]["song"]["list"]
+    fallback_by_name = {song["songname"]: song for song in fallback_songs}
+
+    singer_items = source_data.get("singer", {}).get("itemlist", [])
+    song_items = source_data.get("song", {}).get("itemlist", [])
+    album_items = source_data.get("album", {}).get("itemlist", [])
+    mv_items = source_data.get("mv", {}).get("itemlist", [])
+
+    singer = singer_items[0] if singer_items else {}
+    singer_name = singer.get("name") or name
+    singer_mid = singer.get("mid") or "fallback_singer_001"
+    singer_pic = (singer.get("pic") or "").replace("http://", "https://")
+
+    songs = []
+    seen_names = set()
+    for item in song_items:
+        song_name = item.get("name")
+        song_mid = item.get("mid")
+        if not song_name or not song_mid:
+            continue
+
+        song = dict(fallback_by_name.get(song_name, {}))
+        song.update({
+            "songmid": song_mid,
+            "songname": song_name,
+            "singer": [{
+                "name": item.get("singer") or singer_name,
+                "mid": singer_mid,
+            }],
+        })
+        songs.append(song)
+        seen_names.add(song_name)
+
+    # Keep curated representative songs so the page remains useful when the
+    # public search endpoint returns only a small suggestion list.
+    for song in fallback_songs:
+        if song["songname"] not in seen_names:
+            songs.append(song)
+
+    return {
+        "code": 0,
+        "data": {
+            "_fallback": False,
+            "_skip_index": True,
+            "_source": "qq_music",
+            "zhida": {
+                "zhida_singer": {
+                    "singerName": singer_name,
+                    "singerPic": singer_pic,
+                    "songNum": max(len(songs), source_data.get("song", {}).get("count", 0)),
+                    "albumNum": max(
+                        len({song.get("albummid") for song in songs if song.get("albummid")}),
+                        source_data.get("album", {}).get("count", 0),
+                    ),
+                    "mvNum": source_data.get("mv", {}).get("count", len(mv_items)),
+                }
+            },
+            "song": {"list": songs},
+            "album": {"list": album_items},
+        },
+    }
+
+
+def read_search_cache(query: str):
+    con = get_db_connection()
+    row = con.execute(
+        "SELECT payload, updated_at FROM music_search_cache WHERE query = ?",
+        (query,),
+    ).fetchone()
+    con.close()
+    if not row:
+        return None
+    return {
+        "payload": json.loads(row["payload"]),
+        "updated_at": int(row["updated_at"]),
+    }
+
+
+def write_search_cache(query: str, payload: dict):
+    updated_at = int(time.time())
+    con = get_db_connection()
+    con.execute(
+        """
+        INSERT INTO music_search_cache (query, payload, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(query) DO UPDATE SET
+            payload = excluded.payload,
+            updated_at = excluded.updated_at
+        """,
+        (query, json.dumps(payload, ensure_ascii=False), updated_at),
+    )
+    con.commit()
+    con.close()
+    return updated_at
+
+
+def fetch_qq_search_payload(name: str):
+    query = urllib.parse.urlencode({"key": name, "format": "json"})
+    req = urllib.request.Request(
+        f"{QQ_SEARCH_URL}?{query}",
+        headers={
+            "Referer": "https://y.qq.com/",
+            "User-Agent": "Mozilla/5.0",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=6) as response:
+        raw = json.loads(response.read().decode("utf-8"))
+
+    if raw.get("code") != 0 or not raw.get("data"):
+        raise ValueError("QQ Music search returned no usable data")
+    return normalize_qq_search_payload(name, raw["data"])
+
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -152,32 +270,17 @@ def init_db():
             updated_at TIMESTAMP
         )
     """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS music_search_cache (
+            query TEXT PRIMARY KEY,
+            payload TEXT NOT NULL,
+            updated_at INTEGER NOT NULL
+        )
+    """)
     seed_tours_from_json(con)
     con.commit()
     con.close()
     print(f"Database schema initialized at {DB_PATH}")
-
-# 辅助函数：计算 g_tk
-def get_g_tk(cookie_str):
-    # 尝试提取 qm_keyst (首选) 或 p_skey 或 skey
-    key = ""
-    if "qm_keyst=" in cookie_str:
-        match = re.search(r'qm_keyst=([^; ]+)', cookie_str)
-        if match: key = match.group(1)
-    elif "p_skey=" in cookie_str:
-        match = re.search(r'p_skey=([^; ]+)', cookie_str)
-        if match: key = match.group(1)
-    elif "skey=" in cookie_str:
-        match = re.search(r'skey=([^; ]+)', cookie_str)
-        if match: key = match.group(1)
-
-    if not key:
-        return 5381
-
-    h = 5381
-    for c in key:
-        h += (h << 5) + ord(c)
-    return h & 0x7fffffff
 
 # 主页 - 直接返回静态页面
 @app.get("/")
@@ -205,8 +308,31 @@ def tour_archive():
 # API: 搜索歌手并获取热门歌曲
 @app.get("/api/search_singer")
 def search_singer():
-    name = request.args.get("name", "杨丞琳")
-    return jsonify(build_fallback_search_payload(name))
+    name = request.args.get("name", "杨丞琳").strip() or "杨丞琳"
+    now = int(time.time())
+    cached = read_search_cache(name)
+
+    if cached and now - cached["updated_at"] < SEARCH_CACHE_TTL_SECONDS:
+        payload = cached["payload"]
+        payload["data"]["_cached"] = True
+        payload["data"]["_cache_age_seconds"] = now - cached["updated_at"]
+        return jsonify(payload)
+
+    try:
+        payload = fetch_qq_search_payload(name)
+        updated_at = write_search_cache(name, payload)
+        payload["data"]["_cached"] = False
+        payload["data"]["_updated_at"] = updated_at
+        return jsonify(payload)
+    except Exception as e:
+        logger.warning(f"QQ Music search failed for {name}: {e}")
+        if cached:
+            payload = cached["payload"]
+            payload["data"]["_cached"] = True
+            payload["data"]["_stale"] = True
+            payload["data"]["_cache_age_seconds"] = now - cached["updated_at"]
+            return jsonify(payload)
+        return jsonify(build_fallback_search_payload(name))
 
 # API: 获取歌曲详细统计信息 (收藏量)
 # 注意：由于风控原因，目前仅保留接口定义，实际上不进行敏感数据请求
@@ -224,7 +350,7 @@ def get_lyrics():
         return jsonify({"error": "Missing songmid"}), 400
 
     return jsonify({
-        "lyric": "[00:00.00] 当前歌词服务暂不可用\n[00:05.00] 已进入离线模式\n[00:10.00] 如需实时歌词，可配置新的外部数据源"
+        "lyric": "[00:00.00] 在线曲库已更新\n[00:05.00] 当前暂不提供歌词内容\n[00:10.00] 可前往 QQ 音乐查看完整歌词"
     })
 
 # API: 获取专辑详情（含歌曲列表）
@@ -278,7 +404,7 @@ def get_song_index():
 
         return jsonify({
             "code": 0,
-            "message": "offline_fallback",
+            "message": "realtime_index_unavailable",
             "data": {
                 "music_index": "-",
                 "global_rank": "-",
@@ -286,7 +412,7 @@ def get_song_index():
                 "index_change": "-",
                 "yesterday_rank": "-",
                 "rank_change": "-",
-                "update_time": "离线模式",
+                "update_time": "暂无实时指数",
                 "chart_image": "",
                 "achievements": []
             }
