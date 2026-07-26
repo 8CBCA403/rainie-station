@@ -185,6 +185,13 @@ def fetch_qq_catalog(name: str):
             "songname": song_name,
             "source": "qq",
             "sources": [make_source("qq", song_mid)],
+            "duration_seconds": None,
+            "aliases": [],
+            "qualities": [],
+            "has_mv": False,
+            "cover_url": "",
+            "heat_level": None,
+            "owner_count": None,
             "singer": [{
                 "name": item.get("singer") or singer_name,
                 "mid": singer_mid,
@@ -271,6 +278,9 @@ def fetch_netease_catalog(name: str):
                 publish_time / 1000
             ).strftime("%Y-%m-%d")
         source_id = str(item.get("id"))
+        duration_ms = item.get("dt") or item.get("duration") or 0
+        aliases = item.get("alia") or item.get("alias") or []
+        cover_url = album.get("picUrl") or album.get("blurPicUrl") or ""
         songs.append({
             "songmid": f"netease_{source_id}",
             "songname": item.get("name"),
@@ -278,6 +288,14 @@ def fetch_netease_catalog(name: str):
             "time_public": date_text,
             "source": "netease",
             "sources": [make_source("netease", source_id)],
+            "duration_seconds": round(duration_ms / 1000) if duration_ms else None,
+            "aliases": aliases,
+            "qualities": [],
+            "has_mv": bool(item.get("mv") or item.get("mvid")),
+            "cover_url": cover_url.replace("http://", "https://"),
+            "popularity": item.get("pop"),
+            "heat_level": None,
+            "owner_count": None,
             "singer": [{"name": artist, "mid": ""} for artist in artist_names],
         })
     if not songs:
@@ -317,6 +335,17 @@ def fetch_kugou_catalog(name: str):
         if not source_id:
             continue
         album_id = item.get("AlbumID") or ""
+        qualities = ["标准"]
+        if item.get("HQFileHash"):
+            qualities.append("HQ")
+        if item.get("SQFileHash"):
+            qualities.append("SQ无损")
+        if item.get("ResFileHash"):
+            qualities.append("Hi-Res")
+        if item.get("SuperFileHash"):
+            qualities.append("超清")
+        cover_url = item.get("Image") or item.get("AlbumImage") or ""
+        cover_url = cover_url.replace("{size}", "240").replace("http://", "https://")
         songs.append({
             "songmid": f"kugou_{source_id}",
             "songname": item.get("SongName"),
@@ -324,6 +353,17 @@ def fetch_kugou_catalog(name: str):
             "time_public": item.get("PublishDate") or "",
             "source": "kugou",
             "sources": [make_source("kugou", source_id, album_id)],
+            "duration_seconds": item.get("Duration"),
+            "aliases": [
+                value for value in (item.get("OtherName"), item.get("OriOtherName"))
+                if value
+            ],
+            "qualities": qualities,
+            "has_mv": bool(item.get("MvHash")),
+            "cover_url": cover_url,
+            "popularity": None,
+            "heat_level": item.get("HeatLevel"),
+            "owner_count": item.get("OwnerCount"),
             "singer": [{"name": singer_name, "mid": ""}],
         })
     if not songs:
@@ -363,6 +403,23 @@ def merge_catalog_results(name: str, results: dict, errors: dict):
             for field in ("albumname", "albummid", "time_public"):
                 if not existing.get(field) and song.get(field):
                     existing[field] = song[field]
+            for field in (
+                "duration_seconds",
+                "cover_url",
+                "popularity",
+                "heat_level",
+                "owner_count",
+            ):
+                if existing.get(field) is None or existing.get(field) == "":
+                    if song.get(field) is not None and song.get(field) != "":
+                        existing[field] = song[field]
+            existing["has_mv"] = bool(existing.get("has_mv") or song.get("has_mv"))
+            existing["aliases"] = list(dict.fromkeys(
+                (existing.get("aliases") or []) + (song.get("aliases") or [])
+            ))
+            existing["qualities"] = list(dict.fromkeys(
+                (existing.get("qualities") or []) + (song.get("qualities") or [])
+            ))
 
     songs = list(merged.values())
     if not songs:
@@ -419,7 +476,7 @@ def fetch_aggregated_search_payload(name: str):
     pending_fetchers = {}
 
     for provider, fetcher in fetchers.items():
-        cache_key = f"provider-v1:{provider}:{name}"
+        cache_key = f"provider-v2:{provider}:{name}"
         cached = read_search_cache(cache_key)
         if cached and now - cached["updated_at"] < SEARCH_CACHE_TTL_SECONDS:
             results[provider] = cached["payload"]
@@ -438,7 +495,7 @@ def fetch_aggregated_search_payload(name: str):
             try:
                 result = future.result()
                 results[provider] = result
-                write_search_cache(f"provider-v1:{provider}:{name}", result)
+                write_search_cache(f"provider-v2:{provider}:{name}", result)
             except Exception as exc:
                 if provider in stale_provider_cache:
                     results[provider] = stale_provider_cache[provider]
@@ -573,7 +630,7 @@ def tour_archive():
 def search_singer():
     name = request.args.get("name", "杨丞琳").strip() or "杨丞琳"
     now = int(time.time())
-    cache_key = f"multi-platform-v2:{name}"
+    cache_key = f"multi-platform-v3:{name}"
     cached = read_search_cache(cache_key)
 
     if cached and now - cached["updated_at"] < SEARCH_CACHE_TTL_SECONDS:

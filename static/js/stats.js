@@ -474,13 +474,63 @@ function renderSongs(songs, statsMap, options = {}) {
             const songmid = song.songmid || song.mid;
             const dataEl = document.getElementById(`index-data-${songmid}`);
             const chartEl = document.getElementById(`index-chart-${songmid}`);
+            const duration = song.duration_seconds
+                ? `${Math.floor(song.duration_seconds / 60)}:${String(Math.round(song.duration_seconds % 60)).padStart(2, '0')}`
+                : '-';
+            const aliases = (song.aliases || []).filter(Boolean);
+            const qualities = (song.qualities || []).filter(Boolean);
+            const sourceCount = (song.sources || []).length;
+            const metricItems = [
+                `<span>⏱ ${escapeHtml(duration)}</span>`,
+                `<span>🌐 ${sourceCount} 个平台</span>`,
+                song.has_mv ? '<span>🎬 有 MV</span>' : '',
+                song.heat_level !== null && song.heat_level !== undefined
+                    ? `<span>🔥 热度 ${escapeHtml(song.heat_level)}</span>`
+                    : '',
+                song.owner_count
+                    ? `<span>❤️ 收藏 ${Number(song.owner_count).toLocaleString()}</span>`
+                    : '',
+                song.popularity
+                    ? `<span>📈 人气 ${escapeHtml(song.popularity)}</span>`
+                    : ''
+            ].filter(Boolean);
+
             if (dataEl) {
-                dataEl.innerHTML = options.isFallbackMode
-                    ? '<span style="opacity:0.5; font-size:0.85rem;">本地备用曲库：仅展示基础歌曲信息</span>'
-                    : '<span style="opacity:0.5; font-size:0.85rem;">在线曲库：实时指数暂不提供</span>';
+                dataEl.innerHTML = `
+                    <div style="display:flex; flex-wrap:wrap; gap:7px 12px; font-size:0.78rem; opacity:0.82;">
+                        ${metricItems.join('')}
+                    </div>
+                    ${aliases.length ? `
+                        <div style="margin-top:8px; font-size:0.72rem; opacity:0.5;">
+                            别名：${aliases.map(escapeHtml).join(' / ')}
+                        </div>
+                    ` : ''}
+                `;
             }
             if (chartEl) {
-                chartEl.innerHTML = '<div style="opacity:0.35; font-size:0.8rem;">暂无实时趋势</div>';
+                const cover = song.cover_url
+                    ? `<img src="${escapeHtml(song.cover_url)}"
+                            alt="${escapeHtml(song.songname || song.name || '歌曲')}封面"
+                            loading="lazy"
+                            style="width:58px; height:58px; object-fit:cover; border-radius:8px;
+                                   box-shadow:0 4px 12px rgba(0,0,0,0.25);">`
+                    : '';
+                const qualityBadges = qualities.length
+                    ? qualities.map(quality => `
+                        <span style="padding:2px 6px; border-radius:4px; background:rgba(32,191,100,0.12);
+                                     color:#6bd99a; font-size:0.66rem;">
+                            ${escapeHtml(quality)}
+                        </span>
+                    `).join('')
+                    : '<span style="opacity:0.35; font-size:0.72rem;">音质信息暂无</span>';
+                chartEl.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; width:100%;">
+                        ${cover}
+                        <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; max-width:130px;">
+                            ${qualityBadges}
+                        </div>
+                    </div>
+                `;
             }
         });
         return;
