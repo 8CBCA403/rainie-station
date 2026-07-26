@@ -805,9 +805,22 @@ function renderLyrics(data, container) {
         // 渲染歌词文本
         container.textContent = lyricText || '暂无歌词文本';
 
-        // 如果有翻译
-        if (data.trans) {
-            container.textContent += '\n\n=== 翻译 ===\n\n' + data.trans;
+        // 翻译也可能只有时间标签；清洗后没有正文时不要显示空翻译区。
+        const translatedText = (data.trans || '')
+            .split('\n')
+            .map(line => line
+                .replace(timeReg, '')
+                .replace(tiReg, '')
+                .replace(arReg, '')
+                .replace(alReg, '')
+                .replace(byReg, '')
+                .replace(offsetReg, '')
+                .trim())
+            .filter(Boolean)
+            .join('\n');
+
+        if (translatedText) {
+            container.textContent += '\n\n=== 翻译 ===\n\n' + translatedText;
         }
     } else {
         container.textContent = '暂无歌词';

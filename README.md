@@ -53,7 +53,7 @@ python app.py
 本项目包含标准的 Systemd 服务配置文件。
 
 1. **修改路径**
-   编辑 `rainie-station.service`，确保 `WorkingDirectory` 和 `ExecStart` 指向你的实际路径（默认为 `/home/charles/rainie-station`）。
+   编辑 `rainie-station.service`，确保 `WorkingDirectory` 和 `ExecStart` 指向你的实际路径（例如 `/opt/rainie-station`）。
 
 2. **安装服务**
    ```bash
